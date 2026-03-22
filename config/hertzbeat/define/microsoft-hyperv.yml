@@ -1,0 +1,222 @@
+# ===========================================================
+#  InfraGuardian360 — HertzBeat Monitor Template
+#  Device: Microsoft Hyper-V Host (Windows Server 2016/2019/2022)
+#  Protocol: WMI over SSH / windows_exporter metrics
+#  Covers: Hyper-V hosts, VM inventory, virtual switch,
+#          storage, memory balloon, vCPU scheduling
+#  Note: Requires windows_exporter with Hyper-V collector enabled
+#        Add --collectors.enabled flag in windows_exporter service
+# ===========================================================
+
+category: server
+app: microsoft_hyperv
+name:
+  zh-CN: Microsoft Hyper-V 虚拟化主机
+  en-US: Microsoft Hyper-V Host
+
+params:
+  - field: host
+    name:
+      en-US: Hyper-V Host IP
+    type: host
+    required: true
+  - field: port
+    name:
+      en-US: windows_exporter Port
+    type: number
+    defaultValue: 9182
+    required: true
+  - field: timeout
+    name:
+      en-US: Timeout (ms)
+    type: number
+    defaultValue: 10000
+
+metrics:
+
+  - name: hyperv_host_info
+    priority: 0
+    fields:
+      - field: hostname
+        type: 1
+        label: true
+      - field: os_version
+        type: 1
+      - field: hypervisor_version
+        type: 1
+      - field: logical_processors
+        type: 0
+      - field: total_memory_gb
+        type: 0
+        unit: GB
+      - field: uptime_seconds
+        type: 0
+        unit: s
+    protocol: http
+    http:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      url: /metrics
+      method: GET
+      timeout: ^_^timeout^_^
+      parseType: prometheus
+
+  - name: hyperv_vm_inventory
+    priority: 1
+    fields:
+      - field: vm_name
+        type: 1
+        label: true
+      - field: vm_state
+        type: 1
+      - field: vcpu_count
+        type: 0
+      - field: memory_assigned_mb
+        type: 0
+        unit: MB
+      - field: memory_demand_mb
+        type: 0
+        unit: MB
+      - field: uptime_seconds
+        type: 0
+        unit: s
+    protocol: http
+    http:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      url: /metrics
+      method: GET
+      timeout: ^_^timeout^_^
+      parseType: prometheus
+      parseScript: "windows_hyperv_vm_info"
+
+  - name: hyperv_cpu
+    priority: 2
+    fields:
+      - field: vm_name
+        type: 1
+        label: true
+      - field: cpu_guest_run_percent
+        type: 0
+        unit: '%'
+      - field: cpu_hypervisor_run_percent
+        type: 0
+        unit: '%'
+      - field: cpu_remote_run_percent
+        type: 0
+        unit: '%'
+      - field: vcpus_total
+        type: 0
+    protocol: http
+    http:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      url: /metrics
+      method: GET
+      timeout: ^_^timeout^_^
+      parseType: prometheus
+      parseScript: "windows_hyperv_virtual_processor_percent_guest_run_time"
+
+  - name: hyperv_memory
+    priority: 3
+    fields:
+      - field: vm_name
+        type: 1
+        label: true
+      - field: physical_pages_allocated
+        type: 0
+      - field: remote_physical_pages
+        type: 0
+      - field: memory_pressure_percent
+        type: 0
+        unit: '%'
+    protocol: http
+    http:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      url: /metrics
+      method: GET
+      timeout: ^_^timeout^_^
+      parseType: prometheus
+      parseScript: "windows_hyperv_dynamic_memory_vm_physical_pages_allocated"
+
+  - name: hyperv_virtual_switch
+    priority: 4
+    fields:
+      - field: switch_name
+        type: 1
+        label: true
+      - field: bytes_sent_per_sec
+        type: 0
+        unit: bytes/s
+      - field: bytes_recv_per_sec
+        type: 0
+        unit: bytes/s
+      - field: packets_sent_per_sec
+        type: 0
+      - field: packets_recv_per_sec
+        type: 0
+      - field: dropped_packets_per_sec
+        type: 0
+    protocol: http
+    http:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      url: /metrics
+      method: GET
+      timeout: ^_^timeout^_^
+      parseType: prometheus
+      parseScript: "windows_hyperv_hypervisor_virtual_switch_bytes_sent"
+
+  - name: hyperv_storage
+    priority: 5
+    fields:
+      - field: disk_name
+        type: 1
+        label: true
+      - field: read_bytes_per_sec
+        type: 0
+        unit: bytes/s
+      - field: write_bytes_per_sec
+        type: 0
+        unit: bytes/s
+      - field: read_ops_per_sec
+        type: 0
+      - field: write_ops_per_sec
+        type: 0
+      - field: queue_length
+        type: 0
+    protocol: http
+    http:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      url: /metrics
+      method: GET
+      timeout: ^_^timeout^_^
+      parseType: prometheus
+      parseScript: "windows_hyperv_virtual_storage_device_read_bytes_total"
+
+alerts:
+  - metric: hyperv_vm_inventory
+    field: vm_state
+    preset: true
+    expr: "vm_state != 'Running' && vm_state != 'Paused'"
+    for: 5m
+    severity: critical
+    content: "Hyper-V VM ${vm_name} on ${host} is in state ${vm_state} — expected Running"
+
+  - metric: hyperv_cpu
+    field: cpu_guest_run_percent
+    preset: true
+    expr: "cpu_guest_run_percent > 95"
+    for: 10m
+    severity: warning
+    content: "Hyper-V VM ${vm_name} CPU at ${cpu_guest_run_percent}% — sustained high load"
+
+  - metric: hyperv_memory
+    field: memory_pressure_percent
+    preset: true
+    expr: "memory_pressure_percent > 100"
+    for: 5m
+    severity: warning
+    content: "Hyper-V VM ${vm_name} memory pressure at ${memory_pressure_percent}% — balloon active"

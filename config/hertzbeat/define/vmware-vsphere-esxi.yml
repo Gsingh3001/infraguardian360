@@ -1,0 +1,344 @@
+# ===========================================================
+#  InfraGuardian360 — HertzBeat Monitor Template
+#  Device: VMware vSphere ESXi Host
+#  Covers: ESXi 6.5/6.7/7.0/8.0, vCenter managed or standalone
+#  Protocol: SNMP v2c/v3 (VMWARE-MIB) + HTTP (vSphere API)
+#  Vendor OID: .1.3.6.1.4.1.6876 (VMware)
+#  Note: Enable SNMP on ESXi — esxcli system snmp set
+# ===========================================================
+
+category: server
+app: vmware_esxi_host
+name:
+  zh-CN: VMware ESXi 虚拟化主机
+  en-US: VMware ESXi Host
+
+params:
+  - field: host
+    name:
+      en-US: ESXi Host IP/Hostname
+    type: host
+    required: true
+  - field: port
+    name:
+      en-US: SNMP Port
+    type: number
+    defaultValue: 161
+    required: true
+  - field: snmpVersion
+    name:
+      en-US: SNMP Version
+    type: radio
+    required: true
+    options:
+      - label: "v2c"
+        value: 2
+      - label: "v3"
+        value: 3
+    defaultValue: 2
+  - field: community
+    name:
+      en-US: SNMP Community
+    type: text
+    defaultValue: public
+  - field: snmpUsername
+    name:
+      en-US: SNMP v3 Username
+    type: text
+    required: false
+    hide: true
+  - field: snmpAuthPassword
+    name:
+      en-US: Auth Password
+    type: password
+    required: false
+    hide: true
+  - field: snmpPrivPassword
+    name:
+      en-US: Priv Password
+    type: password
+    required: false
+    hide: true
+  - field: apiPort
+    name:
+      en-US: vSphere API Port
+    type: number
+    defaultValue: 443
+  - field: apiUsername
+    name:
+      en-US: vSphere Username
+    type: text
+    defaultValue: root
+  - field: apiPassword
+    name:
+      en-US: vSphere Password
+    type: password
+
+metrics:
+
+  - name: host_info
+    priority: 0
+    fields:
+      - field: hostname
+        type: 1
+        label: true
+      - field: esxi_version
+        type: 1
+      - field: build_number
+        type: 1
+      - field: vendor
+        type: 1
+      - field: model
+        type: 1
+      - field: cpu_model
+        type: 1
+      - field: uptime_seconds
+        type: 0
+        unit: s
+      - field: connection_state
+        type: 1
+      - field: overall_status
+        type: 1
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        hostname:         1.3.6.1.2.1.1.5.0
+        esxi_version:     1.3.6.1.4.1.6876.1.1.1.0
+        build_number:     1.3.6.1.4.1.6876.1.1.2.0
+        vendor:           1.3.6.1.4.1.6876.1.1.3.0
+        model:            1.3.6.1.4.1.6876.1.1.4.0
+        cpu_model:        1.3.6.1.4.1.6876.1.1.5.0
+        uptime_seconds:   1.3.6.1.2.1.1.3.0
+        connection_state: 1.3.6.1.4.1.6876.1.1.7.0
+        overall_status:   1.3.6.1.4.1.6876.1.1.10.0
+
+  - name: cpu_memory
+    priority: 1
+    fields:
+      - field: physical_cpus
+        type: 0
+      - field: logical_cpus
+        type: 0
+      - field: cpu_speed_mhz
+        type: 0
+        unit: MHz
+      - field: cpu_usage_mhz
+        type: 0
+        unit: MHz
+      - field: cpu_usage_percent
+        type: 0
+        unit: '%'
+      - field: memory_total_mb
+        type: 0
+        unit: MB
+      - field: memory_usage_mb
+        type: 0
+        unit: MB
+      - field: memory_usage_percent
+        type: 0
+        unit: '%'
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        physical_cpus:      1.3.6.1.4.1.6876.2.1.1.2.0
+        logical_cpus:       1.3.6.1.4.1.6876.2.1.1.3.0
+        cpu_speed_mhz:      1.3.6.1.4.1.6876.2.1.1.4.0
+        cpu_usage_mhz:      1.3.6.1.4.1.6876.2.1.1.5.0
+        memory_total_mb:    1.3.6.1.4.1.6876.2.1.1.6.0
+        memory_usage_mb:    1.3.6.1.4.1.6876.2.1.1.7.0
+
+  - name: virtual_machines
+    priority: 2
+    fields:
+      - field: vm_name
+        type: 1
+        label: true
+      - field: vm_config_file
+        type: 1
+      - field: vm_power_state
+        type: 1
+      - field: vm_guest_os
+        type: 1
+      - field: vm_cpu_count
+        type: 0
+      - field: vm_memory_mb
+        type: 0
+        unit: MB
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        vm_name:        1.3.6.1.4.1.6876.2.2.1.2
+        vm_config_file: 1.3.6.1.4.1.6876.2.2.1.3
+        vm_power_state: 1.3.6.1.4.1.6876.2.2.1.5
+        vm_guest_os:    1.3.6.1.4.1.6876.2.2.1.6
+        vm_cpu_count:   1.3.6.1.4.1.6876.2.2.1.9
+        vm_memory_mb:   1.3.6.1.4.1.6876.2.2.1.10
+
+  - name: datastore_usage
+    priority: 3
+    fields:
+      - field: datastore_name
+        type: 1
+        label: true
+      - field: datastore_type
+        type: 1
+      - field: capacity_mb
+        type: 0
+        unit: MB
+      - field: free_space_mb
+        type: 0
+        unit: MB
+      - field: used_percent
+        type: 0
+        unit: '%'
+      - field: accessible
+        type: 1
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        datastore_name:  1.3.6.1.4.1.6876.2.3.1.2
+        datastore_type:  1.3.6.1.4.1.6876.2.3.1.4
+        capacity_mb:     1.3.6.1.4.1.6876.2.3.1.5
+        free_space_mb:   1.3.6.1.4.1.6876.2.3.1.6
+        accessible:      1.3.6.1.4.1.6876.2.3.1.8
+
+  - name: network_adapters
+    priority: 4
+    fields:
+      - field: nic_name
+        type: 1
+        label: true
+      - field: nic_driver
+        type: 1
+      - field: link_status
+        type: 1
+      - field: speed_mbps
+        type: 0
+        unit: Mbps
+      - field: duplex
+        type: 1
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        nic_name:    1.3.6.1.4.1.6876.2.4.1.2
+        nic_driver:  1.3.6.1.4.1.6876.2.4.1.3
+        link_status: 1.3.6.1.4.1.6876.2.4.1.4
+        speed_mbps:  1.3.6.1.4.1.6876.2.4.1.5
+        duplex:      1.3.6.1.4.1.6876.2.4.1.6
+
+  - name: storage_adapters
+    priority: 5
+    fields:
+      - field: adapter_name
+        type: 1
+        label: true
+      - field: adapter_type
+        type: 1
+      - field: adapter_driver
+        type: 1
+      - field: adapter_status
+        type: 1
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        adapter_name:   1.3.6.1.4.1.6876.2.5.1.2
+        adapter_type:   1.3.6.1.4.1.6876.2.5.1.3
+        adapter_driver: 1.3.6.1.4.1.6876.2.5.1.4
+        adapter_status: 1.3.6.1.4.1.6876.2.5.1.5
+
+alerts:
+  - metric: host_info
+    field: overall_status
+    preset: true
+    expr: "overall_status == 'red'"
+    for: 2m
+    severity: critical
+    content: "VMware ESXi host ${host} overall status is RED — check vCenter"
+
+  - metric: cpu_memory
+    field: cpu_usage_percent
+    preset: true
+    expr: "cpu_usage_percent > 90"
+    for: 10m
+    severity: warning
+    content: "VMware ESXi ${host} CPU at ${cpu_usage_percent}% — sustained high load"
+
+  - metric: cpu_memory
+    field: memory_usage_percent
+    preset: true
+    expr: "memory_usage_percent > 90"
+    for: 5m
+    severity: warning
+    content: "VMware ESXi ${host} memory at ${memory_usage_percent}% — VMs may balloon"
+
+  - metric: virtual_machines
+    field: vm_power_state
+    preset: true
+    expr: "vm_power_state == 'off' || vm_power_state == 'suspended'"
+    for: 5m
+    severity: warning
+    content: "VMware VM ${vm_name} on ${host} is ${vm_power_state}"
+
+  - metric: datastore_usage
+    field: used_percent
+    preset: true
+    expr: "used_percent > 85"
+    for: 5m
+    severity: warning
+    content: "VMware datastore ${datastore_name} on ${host} is ${used_percent}% full"
+
+  - metric: datastore_usage
+    field: accessible
+    preset: true
+    expr: "accessible == 'false'"
+    for: 2m
+    severity: critical
+    content: "VMware datastore ${datastore_name} on ${host} is NOT ACCESSIBLE"

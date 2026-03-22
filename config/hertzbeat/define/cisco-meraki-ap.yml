@@ -1,0 +1,212 @@
+# ===========================================================
+#  InfraGuardian360 — HertzBeat Monitor Template
+#  Device: Cisco Meraki (MR, MS, MX series)
+#  Note: Meraki has NO local SNMP — all monitoring via cloud API
+#  Protocol: Meraki Dashboard REST API (HTTP)
+#  Requires: Meraki Dashboard API key
+#  API docs: developer.cisco.com/meraki/api
+# ===========================================================
+
+category: network
+app: cisco_meraki
+name:
+  zh-CN: Cisco Meraki 云管理网络
+  en-US: Cisco Meraki Cloud Network
+
+params:
+  - field: host
+    name:
+      en-US: Meraki API Host
+    type: host
+    required: true
+    defaultValue: api.meraki.com
+  - field: port
+    name:
+      en-US: API Port
+    type: number
+    defaultValue: 443
+    required: true
+  - field: apiKey
+    name:
+      en-US: Meraki API Key
+    type: password
+    required: true
+  - field: networkId
+    name:
+      en-US: Network ID
+    type: text
+    required: true
+  - field: orgId
+    name:
+      en-US: Organisation ID
+    type: text
+    required: true
+
+metrics:
+
+  - name: network_devices
+    priority: 0
+    fields:
+      - field: device_name
+        type: 1
+        label: true
+      - field: device_model
+        type: 1
+      - field: device_status
+        type: 1
+      - field: device_serial
+        type: 1
+      - field: device_mac
+        type: 1
+      - field: firmware_version
+        type: 1
+      - field: last_reported_seconds
+        type: 0
+        unit: s
+    protocol: http
+    http:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      url: /api/v1/networks/^_^networkId^_^/devices/statuses
+      method: GET
+      ssl: true
+      headers:
+        X-Cisco-Meraki-API-Key: ^_^apiKey^_^
+        Content-Type: application/json
+      parseType: jsonPath
+      parseScript: "$[*]"
+
+  - name: wireless_clients
+    priority: 1
+    fields:
+      - field: ap_name
+        type: 1
+        label: true
+      - field: clients_2_4ghz
+        type: 0
+      - field: clients_5ghz
+        type: 0
+      - field: clients_6ghz
+        type: 0
+      - field: total_clients
+        type: 0
+      - field: usage_sent_kb
+        type: 0
+        unit: KB
+      - field: usage_recv_kb
+        type: 0
+        unit: KB
+    protocol: http
+    http:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      url: /api/v1/networks/^_^networkId^_^/wireless/devices/connectionStats
+      method: GET
+      ssl: true
+      headers:
+        X-Cisco-Meraki-API-Key: ^_^apiKey^_^
+      parseType: jsonPath
+      parseScript: "$[*]"
+
+  - name: uplink_status
+    priority: 2
+    fields:
+      - field: device_serial
+        type: 1
+        label: true
+      - field: uplink_interface
+        type: 1
+      - field: uplink_status
+        type: 1
+      - field: ip_address
+        type: 1
+      - field: gateway
+        type: 1
+      - field: public_ip
+        type: 1
+    protocol: http
+    http:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      url: /api/v1/organizations/^_^orgId^_^/uplinks/statuses
+      method: GET
+      ssl: true
+      headers:
+        X-Cisco-Meraki-API-Key: ^_^apiKey^_^
+      parseType: jsonPath
+      parseScript: "$[*].uplinks[*]"
+
+  - name: switch_ports
+    priority: 3
+    fields:
+      - field: port_id
+        type: 1
+        label: true
+      - field: port_status
+        type: 1
+      - field: port_speed
+        type: 1
+      - field: poe_status
+        type: 1
+      - field: vlan
+        type: 0
+      - field: bytes_sent
+        type: 0
+        unit: bytes
+      - field: bytes_recv
+        type: 0
+        unit: bytes
+    protocol: http
+    http:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      url: /api/v1/networks/^_^networkId^_^/switch/ports/statuses
+      method: GET
+      ssl: true
+      headers:
+        X-Cisco-Meraki-API-Key: ^_^apiKey^_^
+      parseType: jsonPath
+      parseScript: "$[*]"
+
+  - name: security_events
+    priority: 4
+    fields:
+      - field: event_type
+        type: 1
+        label: true
+      - field: event_description
+        type: 1
+      - field: source_ip
+        type: 1
+      - field: destination_ip
+        type: 1
+      - field: timestamp
+        type: 1
+    protocol: http
+    http:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      url: /api/v1/networks/^_^networkId^_^/appliance/security/events
+      method: GET
+      ssl: true
+      headers:
+        X-Cisco-Meraki-API-Key: ^_^apiKey^_^
+      parseType: jsonPath
+      parseScript: "$[*]"
+
+alerts:
+  - metric: network_devices
+    field: device_status
+    preset: true
+    expr: "device_status == 'offline'"
+    for: 5m
+    severity: critical
+    content: "Meraki device ${device_name} (${device_serial}) is OFFLINE"
+
+  - metric: uplink_status
+    field: uplink_status
+    preset: true
+    expr: "uplink_status != 'active'"
+    for: 3m
+    severity: critical
+    content: "Meraki uplink ${uplink_interface} on ${device_serial} is ${uplink_status}"
