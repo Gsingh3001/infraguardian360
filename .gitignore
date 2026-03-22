@@ -1,0 +1,14 @@
+.env
+*.env.local
+secrets/
+*.key
+*.pem
+data/
+postgres-data/
+redis-data/
+vm-data/
+os-data/
+.DS_Store
+Thumbs.db
+.vscode/
+*.swp
