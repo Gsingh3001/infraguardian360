@@ -1,0 +1,118 @@
+version: "3.9"
+
+# ============================================================
+#  InfraGuardian360 — Logging Stack (Phase 5)
+#  OpenSearch + OpenSearch Dashboards + Fluent Bit
+#  Centralised log analytics — replaces Splunk (£150+/GB/day)
+#  Usage: docker compose -f docker/docker-compose.logging.yml up -d
+#  Requires: docker-compose.core.yml already running
+# ============================================================
+
+services:
+
+  # ── OpenSearch Node ──────────────────────────────────────────
+  opensearch:
+    image: opensearchproject/opensearch:2.12.0
+    container_name: ig360-opensearch
+    restart: unless-stopped
+    environment:
+      cluster.name: ig360-logs
+      node.name: ig360-opensearch-node1
+      discovery.type: single-node
+      bootstrap.memory_lock: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms2g -Xmx2g"
+      DISABLE_INSTALL_DEMO_CONFIG: "true"
+      DISABLE_SECURITY_PLUGIN: "false"
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: ${OPENSEARCH_ADMIN_PASSWORD}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+      - ./config/opensearch/opensearch.yml:/usr/share/opensearch/config/opensearch.yml
+    networks:
+      - ig360
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sk https://localhost:9200/_cluster/health -u admin:${OPENSEARCH_ADMIN_PASSWORD} | grep -v '\"status\":\"red\"'"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  # ── OpenSearch Dashboards ────────────────────────────────────
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:2.12.0
+    container_name: ig360-opensearch-dashboards
+    restart: unless-stopped
+    environment:
+      OPENSEARCH_HOSTS: '["https://opensearch:9200"]'
+      OPENSEARCH_USERNAME: admin
+      OPENSEARCH_PASSWORD: ${OPENSEARCH_ADMIN_PASSWORD}
+      DISABLE_SECURITY_DASHBOARDS_PLUGIN: "false"
+      SERVER_BASEPATH: ""
+      SERVER_REWRITEBASEPATH: "false"
+    volumes:
+      - ./config/opensearch/dashboards.yml:/usr/share/opensearch-dashboards/config/opensearch_dashboards.yml
+    depends_on:
+      opensearch:
+        condition: service_healthy
+    networks:
+      - ig360
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.logs.rule=Host(`logs.${DOMAIN}`)"
+      - "traefik.http.routers.logs.tls.certresolver=le"
+      - "traefik.http.services.logs.loadbalancer.server.port=5601"
+
+  # ── Fluent Bit — Log Collector ───────────────────────────────
+  # Runs on the platform server itself — collects all Docker logs
+  # and system logs and ships to OpenSearch
+  fluent-bit:
+    image: fluent/fluent-bit:3.0
+    container_name: ig360-fluent-bit
+    restart: unless-stopped
+    volumes:
+      - ./config/fluent-bit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
+      - ./config/fluent-bit/parsers.conf:/fluent-bit/etc/parsers.conf
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - fluent-bit-db:/fluent-bit/db
+    environment:
+      OPENSEARCH_HOST: opensearch
+      OPENSEARCH_PORT: 9200
+      OPENSEARCH_USER: admin
+      OPENSEARCH_PASSWORD: ${OPENSEARCH_ADMIN_PASSWORD}
+    depends_on:
+      opensearch:
+        condition: service_healthy
+    networks:
+      - ig360
+
+  # ── OpenSearch Index State Management ───────────────────────
+  # Applies retention and rollover policies automatically
+  opensearch-ism:
+    image: curlimages/curl:8.6.0
+    container_name: ig360-opensearch-ism
+    restart: "no"
+    depends_on:
+      opensearch:
+        condition: service_healthy
+    environment:
+      OPENSEARCH_ADMIN_PASSWORD: ${OPENSEARCH_ADMIN_PASSWORD}
+    volumes:
+      - ./config/opensearch/ism-policies.sh:/ism-policies.sh
+    command: sh /ism-policies.sh
+    networks:
+      - ig360
+
+networks:
+  ig360:
+    external: true
+
+volumes:
+  opensearch-data:
+  fluent-bit-db:

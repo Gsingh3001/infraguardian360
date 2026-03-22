@@ -1,0 +1,31 @@
+# ============================================================
+#  InfraGuardian360 — OpenSearch Dashboards Configuration
+# ============================================================
+
+server.name: ig360-opensearch-dashboards
+server.host: "0.0.0.0"
+server.port: 5601
+
+# ── OpenSearch connection ─────────────────────────────────────
+opensearch.hosts: ["https://opensearch:9200"]
+opensearch.username: admin
+opensearch.password: ${OPENSEARCH_ADMIN_PASSWORD}
+opensearch.ssl.verificationMode: none
+opensearch.requestHeadersAllowlist:
+  - authorization
+  - securitytenant
+
+# ── Security ─────────────────────────────────────────────────
+opensearch_security.multitenancy.enabled: true
+opensearch_security.multitenancy.tenants.preferred:
+  - Private
+  - Global
+opensearch_security.readonly_mode.roles:
+  - kibana_read_only
+opensearch_security.cookie.secure: false
+
+# ── Logging ───────────────────────────────────────────────────
+logging.dest: stdout
+logging.silent: false
+logging.quiet: false
+logging.verbose: false
