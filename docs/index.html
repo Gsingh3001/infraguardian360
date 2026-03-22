@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>InfraGuardian360 // Full 360° Infrastructure Intelligence</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  darkMode:"class",
+  theme:{
+    extend:{
+      colors:{
+        "bg-deep":"#03080f","bg-base":"#06101a","bg-panel":"#0c1a26","bg-card":"#101f2e",
+        "border-dim":"rgba(0,255,180,0.1)","border-mid":"rgba(0,255,180,0.25)","border-bright":"rgba(0,255,180,0.5)",
+        "teal":"#00ffb4","teal-dim":"rgba(0,255,180,0.6)","teal-muted":"rgba(0,255,180,0.3)",
+        "blue":"#00a8ff","amber":"#ffb800","red":"#ff3e3e",
+        "text-primary":"#d4ede6","text-muted":"#4a7a6a","text-dim":"#2a4a3a"
+      },
+      fontFamily:{
+        "display":["Orbitron","sans-serif"],
+        "mono":["Share Tech Mono","monospace"],
+        "body":["DM Sans","sans-serif"]
+      },
+      borderRadius:{"DEFAULT":"0px","lg":"2px","xl":"4px","full":"9999px"}
+    }
+  }
+}
+</script>
+<style>
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background-color:#03080f;color:#d4ede6;font-family:'DM Sans',sans-serif;overflow-x:hidden}
+
+/* STAR FIELD */
+.starfield{position:fixed;inset:0;z-index:0;pointer-events:none}
+.starfield::before,.starfield::after{content:'';position:absolute;inset:0}
+.starfield::before{
+  background-image:
+    radial-gradient(1px 1px at 8% 12%,rgba(255,255,255,0.9) 0%,transparent 100%),
+    radial-gradient(1px 1px at 22% 67%,rgba(255,255,255,0.6) 0%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 14% 88%,rgba(0,255,180,0.9) 0%,transparent 100%),
+    radial-gradient(1px 1px at 38% 23%,rgba(255,255,255,0.7) 0%,transparent 100%),
+    radial-gradient(1px 1px at 51% 78%,rgba(255,255,255,0.5) 0%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 44% 44%,rgba(0,168,255,0.8) 0%,transparent 100%),
+    radial-gradient(1px 1px at 67% 11%,rgba(255,255,255,0.8) 0%,transparent 100%),
+    radial-gradient(1px 1px at 73% 56%,rgba(255,255,255,0.4) 0%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 82% 34%,rgba(255,184,0,0.7) 0%,transparent 100%),
+    radial-gradient(1px 1px at 91% 79%,rgba(255,255,255,0.6) 0%,transparent 100%),
+    radial-gradient(1px 1px at 29% 91%,rgba(255,255,255,0.5) 0%,transparent 100%),
+    radial-gradient(1px 1px at 58% 35%,rgba(255,255,255,0.7) 0%,transparent 100%),
+    radial-gradient(1px 1px at 96% 18%,rgba(255,255,255,0.6) 0%,transparent 100%),
+    radial-gradient(1px 1px at 4% 45%,rgba(255,255,255,0.4) 0%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 77% 92%,rgba(0,255,180,0.6) 0%,transparent 100%);
+  animation:twinkle 4s ease-in-out infinite alternate}
+.starfield::after{
+  background-image:
+    radial-gradient(1px 1px at 17% 33%,rgba(255,255,255,0.6) 0%,transparent 100%),
+    radial-gradient(1px 1px at 33% 71%,rgba(255,255,255,0.5) 0%,transparent 100%),
+    radial-gradient(1px 1px at 62% 8%,rgba(255,255,255,0.8) 0%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 85% 55%,rgba(0,255,180,0.7) 0%,transparent 100%),
+    radial-gradient(1px 1px at 48% 19%,rgba(255,255,255,0.4) 0%,transparent 100%),
+    radial-gradient(1px 1px at 11% 62%,rgba(255,255,255,0.7) 0%,transparent 100%),
+    radial-gradient(1px 1px at 94% 41%,rgba(255,255,255,0.5) 0%,transparent 100%),
+    radial-gradient(1px 1px at 26% 55%,rgba(255,255,255,0.3) 0%,transparent 100%);
+  animation:twinkle 6s ease-in-out infinite alternate-reverse}
+@keyframes twinkle{from{opacity:.5}to{opacity:1}}
+
+/* GRID OVERLAY */
+.grid-overlay{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(0,255,180,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,180,0.025) 1px,transparent 1px);
+  background-size:60px 60px}
+
+/* SCANLINE */
+.scanline{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.06) 2px,rgba(0,0,0,0.06) 4px)}
+
+/* GLOW EFFECTS */
+.glow-teal{box-shadow:0 0 20px rgba(0,255,180,0.15),0 0 40px rgba(0,255,180,0.05)}
+.glow-teal-strong{box-shadow:0 0 30px rgba(0,255,180,0.3),0 0 60px rgba(0,255,180,0.1)}
+.text-glow{text-shadow:0 0 30px rgba(0,255,180,0.5)}
+.border-glow{border-color:rgba(0,255,180,0.5);box-shadow:0 0 15px rgba(0,255,180,0.1)}
+
+/* PULSE */
+@keyframes pulse{
+  0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,255,180,0.7)}
+  50%{opacity:.6;box-shadow:0 0 0 8px rgba(0,255,180,0)}}
+.status-pulse{animation:pulse 2s ease-in-out infinite}
+
+/* MARQUEE */
+@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.marquee{animation:marquee 35s linear infinite;white-space:nowrap;display:flex;gap:3rem}
+
+/* BAR ANIMATE */
+@keyframes barGrow{from{width:0}to{width:var(--w)}}
+.bar-fill{animation:barGrow 2s ease-out forwards}
+
+/* SCAN LINE MOVE */
+@keyframes scanmove{0%{top:-10%}100%{top:110%}}
+.scan-beam{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(0,255,180,0.3),transparent);animation:scanmove 4s linear infinite;pointer-events:none}
+
+/* CARD HOVER */
+.device-card{transition:all .25s ease}
+.device-card:hover{transform:translateY(-3px);border-color:rgba(0,255,180,0.4);box-shadow:0 8px 30px rgba(0,255,180,0.1)}
+
+/* BRACKET DECORATION */
+.bracket::before{content:'[';position:absolute;top:8px;left:8px;color:rgba(0,255,180,0.3);font-family:'Share Tech Mono';font-size:1rem;line-height:1}
+.bracket::after{content:']';position:absolute;bottom:8px;right:8px;color:rgba(0,255,180,0.3);font-family:'Share Tech Mono';font-size:1rem;line-height:1}
+
+/* SECTION TAG */
+.section-tag{display:flex;align-items:center;gap:12px;font-family:'Share Tech Mono';font-size:10px;color:#00ffb4;letter-spacing:.2em;text-transform:uppercase;margin-bottom:1rem}
+.section-tag::before{content:'';width:24px;height:1px;background:#00ffb4}
+
+/* CODE BLOCK */
+.code-block{background:#020a10;border:1px solid rgba(0,255,180,0.15);font-family:'Share Tech Mono';font-size:13px;line-height:2.2;overflow-x:auto}
+
+/* BUTTONS */
+.btn-primary{display:inline-flex;align-items:center;gap:10px;font-family:'Share Tech Mono';font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#03080f;background:#00ffb4;border:2px solid #00ffb4;padding:14px 32px;text-decoration:none;cursor:pointer;transition:all .2s}
+.btn-primary:hover{background:transparent;color:#00ffb4;box-shadow:0 0 30px rgba(0,255,180,0.3)}
+.btn-ghost{display:inline-flex;align-items:center;gap:10px;font-family:'Share Tech Mono';font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#00ffb4;background:transparent;border:1px solid rgba(0,255,180,0.35);padding:14px 32px;text-decoration:none;cursor:pointer;transition:all .2s}
+.btn-ghost:hover{background:rgba(0,255,180,0.05);border-color:rgba(0,255,180,0.7)}
+
+/* TIER PILLS */
+.pill{font-family:'Share Tech Mono';font-size:10px;padding:3px 10px;border:1px solid;letter-spacing:.06em}
+.pill-blue{border-color:rgba(0,168,255,0.35);color:#00a8ff;background:rgba(0,168,255,0.07)}
+.pill-teal{border-color:rgba(0,255,180,0.35);color:#00ffb4;background:rgba(0,255,180,0.06)}
+.pill-amber{border-color:rgba(255,184,0,0.35);color:#ffb800;background:rgba(255,184,0,0.06)}
+.pill-red{border-color:rgba(255,62,62,0.35);color:#ff3e3e;background:rgba(255,62,62,0.06)}
+.pill-gray{border-color:rgba(255,255,255,0.15);color:rgba(255,255,255,0.45);background:rgba(255,255,255,0.03)}
+
+/* PHASE NUMBER WATERMARK */
+.phase-num{position:absolute;right:-12px;bottom:-20px;font-family:'Orbitron';font-size:7rem;font-weight:900;opacity:.04;pointer-events:none;line-height:1}
+</style>
+</head>
+<body>
+
+<div class="starfield"></div>
+<div class="grid-overlay"></div>
+<div class="scanline"></div>
+
+<!-- NAVBAR -->
+<nav class="sticky top-0 z-50 bg-[#03080f]/90 backdrop-blur-xl border-b border-[rgba(0,255,180,0.12)] px-6 lg:px-10 py-0 flex items-center justify-between h-14">
+  <div class="flex items-center gap-6">
+    <span class="font-display text-sm font-black tracking-[.12em] text-[#00ffb4]">[ INFRAGUARDIAN<span class="opacity-50">360</span> ]</span>
+    <div class="hidden lg:flex items-center gap-2 px-3 py-1 border border-[rgba(0,255,180,0.2)] bg-[rgba(0,255,180,0.04)]">
+      <div class="w-2 h-2 rounded-full bg-[#00ffb4] status-pulse"></div>
+      <span class="font-mono text-[9px] text-[#00ffb4] tracking-[.2em]">ALL SYSTEMS NOMINAL</span>
+    </div>
+  </div>
+  <div class="hidden md:flex items-center gap-8 font-mono text-[10px] tracking-[.12em]">
+    <a href="#arch" class="text-[rgba(0,255,180,0.5)] hover:text-[#00ffb4] transition-colors">ARCHITECTURE</a>
+    <a href="#coverage" class="text-[rgba(0,255,180,0.5)] hover:text-[#00ffb4] transition-colors">COVERAGE</a>
+    <a href="#mission" class="text-[rgba(0,255,180,0.5)] hover:text-[#00ffb4] transition-colors">MISSION</a>
+    <a href="#deploy" class="text-[rgba(0,255,180,0.5)] hover:text-[#00ffb4] transition-colors">DEPLOY</a>
+  </div>
+  <a href="https://github.com/Gsingh3001/infraguardian360" class="btn-primary py-2 px-5 text-[9px]">GITHUB ↗</a>
+</nav>
+
+<!-- HERO -->
+<section class="relative z-10 min-h-screen flex items-center px-6 lg:px-16 pt-10">
+  <div class="scan-beam"></div>
+  <div class="max-w-7xl w-full mx-auto grid lg:grid-cols-2 gap-16 items-center">
+
+    <!-- LEFT -->
+    <div class="space-y-8">
+      <div class="inline-flex items-center gap-3 border border-[rgba(0,255,180,0.3)] bg-[rgba(0,255,180,0.04)] px-4 py-2">
+        <div class="w-1.5 h-1.5 rounded-full bg-[#00ffb4] status-pulse"></div>
+        <span class="font-mono text-[9px] text-[#00ffb4] tracking-[.25em]">MISSION BRIEF — INFRAGUARDIAN360 v1.0</span>
+      </div>
+
+      <div>
+        <h1 class="font-display text-5xl lg:text-7xl font-black leading-[1.0] tracking-[-0.02em] text-white uppercase">
+          Full <span class="text-[#00ffb4] text-glow">360°</span><br>
+          Infrastructure<br>
+          <span class="opacity-20">Intelligence</span>
+        </h1>
+      </div>
+
+      <p class="font-mono text-xs text-[rgba(0,255,180,0.5)] tracking-[.1em] leading-loose">
+        // SELF-HOSTED · DOCKER-NATIVE · ZERO LICENCE COST<br>
+        Complete visibility across physical DC, cloud, endpoints<br>
+        and every device on your network. One command to deploy.
+      </p>
+
+      <div class="flex flex-wrap gap-4">
+        <a href="#deploy" class="btn-primary">▶ DEPLOY NOW</a>
+        <a href="#arch" class="btn-ghost">VIEW ARCHITECTURE →</a>
+      </div>
+
+      <!-- MINI METRICS ROW -->
+      <div class="grid grid-cols-4 gap-3 pt-4">
+        <div class="border border-[rgba(0,255,180,0.12)] bg-[rgba(0,255,180,0.03)] p-3 text-center">
+          <div class="font-display text-xl font-black text-[#00ffb4]">18</div>
+          <div class="font-mono text-[8px] text-[rgba(0,255,180,0.4)] tracking-widest mt-1">SERVICES</div>
+        </div>
+        <div class="border border-[rgba(0,255,180,0.12)] bg-[rgba(0,255,180,0.03)] p-3 text-center">
+          <div class="font-display text-xl font-black text-[#00a8ff]">7</div>
+          <div class="font-mono text-[8px] text-[rgba(0,255,180,0.4)] tracking-widest mt-1">DEVICES</div>
+        </div>
+        <div class="border border-[rgba(0,255,180,0.12)] bg-[rgba(0,255,180,0.03)] p-3 text-center">
+          <div class="font-display text-xl font-black text-[#ffb800]">130+</div>
+          <div class="font-mono text-[8px] text-[rgba(0,255,180,0.4)] tracking-widest mt-1">MONITORS</div>
+        </div>
+        <div class="border border-[rgba(0,255,180,0.12)] bg-[rgba(0,255,180,0.03)] p-3 text-center">
+          <div class="font-display text-xl font-black text-[#00ffb4]">£0</div>
+          <div class="font-mono text-[8px] text-[rgba(0,255,180,0.4)] tracking-widest mt-1">COST</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT — TELEMETRY PANEL -->
+    <div class="relative">
+      <div class="absolute -inset-6 bg-[rgba(0,255,180,0.04)] blur-3xl rounded-full pointer-events-none"></div>
+      <div class="relative border border-[rgba(0,255,180,0.2)] bg-[#06101a] p-6 bracket relative overflow-hidden">
+        <div class="scan-beam" style="animation-duration:3s;animation-delay:-1s"></div>
+
+        <!-- PANEL HEADER -->
+        <div class="flex items-center justify-between mb-6 pb-4 border-b border-[rgba(0,255,180,0.1)]">
+          <div>
+            <div class="font-mono text-[9px] text-[rgba(0,255,180,0.4)] tracking-widest mb-1">[ SYSTEM_TELEMETRY ]</div>
+            <div class="font-display text-sm font-bold text-[#00ffb4]">ORBITAL_STATUS</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-1.5 h-1.5 rounded-full bg-[#00ffb4] status-pulse"></div>
+            <span class="font-mono text-[8px] text-[rgba(0,255,180,0.5)]">REFRESH: 0.5s</span>
+          </div>
+        </div>
+
+        <!-- TELEMETRY METRICS -->
+        <div class="space-y-5">
+          <div>
+            <div class="flex justify-between mb-1">
+              <span class="font-mono text-[9px] text-[rgba(0,255,180,0.5)] tracking-widest">DOCKER SERVICES ONLINE</span>
+              <span class="font-mono text-[9px] text-[#00ffb4]">18/18</span>
+            </div>
+            <div class="h-1 bg-[rgba(0,255,180,0.1)]">
+              <div class="h-full bg-[#00ffb4] bar-fill" style="--w:100%;box-shadow:0 0 8px rgba(0,255,180,0.6)"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between mb-1">
+              <span class="font-mono text-[9px] text-[rgba(0,255,180,0.5)] tracking-widest">MONITOR TEMPLATES ACTIVE</span>
+              <span class="font-mono text-[9px] text-[#00a8ff]">130+</span>
+            </div>
+            <div class="h-1 bg-[rgba(0,168,255,0.1)]">
+              <div class="h-full bg-[#00a8ff] bar-fill" style="--w:85%;box-shadow:0 0 8px rgba(0,168,255,0.5)"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between mb-1">
+              <span class="font-mono text-[9px] text-[rgba(0,255,180,0.5)] tracking-widest">ANNUAL SAVING (500 DEVICES)</span>
+              <span class="font-mono text-[9px] text-[#ffb800]">£500K</span>
+            </div>
+            <div class="h-1 bg-[rgba(255,184,0,0.1)]">
+              <div class="h-full bg-[#ffb800] bar-fill" style="--w:92%;box-shadow:0 0 8px rgba(255,184,0,0.5)"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between mb-1">
+              <span class="font-mono text-[9px] text-[rgba(0,255,180,0.5)] tracking-widest">LICENCE COST</span>
+              <span class="font-mono text-[9px] text-[#00ffb4]">£0.00 / FOREVER</span>
+            </div>
+            <div class="h-1 bg-[rgba(0,255,180,0.1)]">
+              <div class="h-full bg-[#00ffb4] bar-fill" style="--w:0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FAKE TERMINAL OUTPUT -->
+        <div class="mt-6 pt-4 border-t border-[rgba(0,255,180,0.1)]">
+          <div class="font-mono text-[9px] text-[rgba(0,255,180,0.3)] leading-relaxed space-y-0.5">
+            <div><span class="text-[rgba(0,255,180,0.6)]">$</span> GET /api/v1/telemetry/nodes HTTP/1.1</div>
+            <div>Host: infra.guardian.internal</div>
+            <div>Processing: CMDB_MAPPING... <span class="text-[#00ffb4]">OK</span></div>
+            <div>Processing: SNMP_WALK... <span class="text-[#00ffb4]">COMPLETED (78ms)</span></div>
+            <div>Processing: TOPOLOGY... <span class="text-[#00ffb4]">SYNCED</span></div>
+            <div class="text-[#00ffb4]">STATUS: ACTIVE // STREAMING_MODE_ON ▌</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS BAR -->
+<div class="relative z-10 border-y border-[rgba(0,255,180,0.1)] bg-[#020a10]">
+  <div class="grid grid-cols-4 lg:grid-cols-7">
+    <div class="py-5 text-center border-r border-[rgba(0,255,180,0.08)]">
+      <div class="font-display text-2xl font-black text-[#00ffb4]">18</div>
+      <div class="font-mono text-[8px] text-[rgba(0,255,180,0.4)] tracking-widest mt-1">DOCKER SERVICES</div>
+    </div>
+    <div class="py-5 text-center border-r border-[rgba(0,255,180,0.08)]">
+      <div class="font-display text-2xl font-black text-[#00a8ff]">7</div>
+      <div class="font-mono text-[8px] text-[rgba(0,255,180,0.4)] tracking-widest mt-1">DEVICE TYPES</div>
+    </div>
+    <div class="py-5 text-center border-r border-[rgba(0,255,180,0.08)]">
+      <div class="font-display text-2xl font-black text-[#ffb800]">130+</div>
+      <div class="font-mono text-[8px] text-[rgba(0,255,180,0.4)] tracking-widest mt-1">MONITOR TEMPLATES</div>
+    </div>
+    <div class="py-5 text-center border-r border-[rgba(0,255,180,0.08)]">
+      <div class="font-display text-2xl font-black text-white">6</div>
+      <div class="font-mono text-[8px] text-[rgba(0,255,180,0.4)] tracking-widest mt-1">BUILD PHASES</div>
+    </div>
+    <div class="hidden lg:block py-5 text-center border-r border-[rgba(0,255,180,0.08)]">
+      <div class="font-display text-2xl font-black text-[#00ffb4]">100%</div>
+      <div class="font-mono text-[8px] text-[rgba(0,255,180,0.4)] tracking-widest mt-1">APACHE 2.0</div>
+    </div>
+    <div class="hidden lg:block py-5 text-center border-r border-[rgba(0,255,180,0.08)]">
+      <div class="font-display text-2xl font-black text-white">12</div>
+      <div class="font-mono text-[8px] text-[rgba(0,255,180,0.4)] tracking-widest mt-1">WEEKS TO DEPLOY</div>
+    </div>
+    <div class="hidden lg:block py-5 text-center">
+      <div class="font-display text-2xl font-black text-[#ff3e3e]">£0</div>
+      <div class="font-mono text-[8px] text-[rgba(0,255,180,0.4)] tracking-widest mt-1">LICENCE COST</div>
+    </div>
+  </div>
+</div>
+
+<!-- MARQUEE -->
+<div class="relative z-10 overflow-hidden border-b border-[rgba(0,255,180,0.08)] bg-[#03080f] py-3">
+  <div class="marquee">
+    <span class="font-mono text-[10px] text-[rgba(0,255,180,0.25)] tracking-[.3em] flex items-center gap-8">
+      <span>// NETBOX CMDB + IPAM</span><span class="text-[#00ffb4]">·</span>
+      <span>APACHE HERTZBEAT 130+ TEMPLATES</span><span class="text-[#00ffb4]">·</span>
+      <span>PROMETHEUS + VICTORIAMETRICS</span><span class="text-[#00ffb4]">·</span>
+      <span>SIGNOZ APM + DISTRIBUTED TRACING</span><span class="text-[#00ffb4]">·</span>
+      <span>OPENSEARCH LOG ANALYTICS</span><span class="text-[#00ffb4]">·</span>
+      <span>GRAFANA BEYLA EBPF ZERO-CODE</span><span class="text-[#00ffb4]">·</span>
+      <span>OPENTELEMETRY COLLECTOR</span><span class="text-[#00ffb4]">·</span>
+      <span>KEYCLOAK SSO + LDAP</span><span class="text-[#00ffb4]">·</span>
+      <span>TRAEFIK AUTO-TLS</span><span class="text-[#00ffb4]">·</span>
+      <span>NETDISCO L2 TOPOLOGY</span><span class="text-[#00ffb4]">·</span>
+      <span>FLUENT BIT LOG SHIPPING</span><span class="text-[#00ffb4]">·</span>
+      <span>// NETBOX CMDB + IPAM</span><span class="text-[#00ffb4]">·</span>
+      <span>APACHE HERTZBEAT 130+ TEMPLATES</span><span class="text-[#00ffb4]">·</span>
+      <span>PROMETHEUS + VICTORIAMETRICS</span><span class="text-[#00ffb4]">·</span>
+      <span>SIGNOZ APM + DISTRIBUTED TRACING</span><span class="text-[#00ffb4]">·</span>
+      <span>OPENSEARCH LOG ANALYTICS</span><span class="text-[#00ffb4]">·</span>
+      <span>GRAFANA BEYLA EBPF ZERO-CODE</span><span class="text-[#00ffb4]">·</span>
+    </span>
+  </div>
+</div>
+
+<!-- ARCHITECTURE -->
+<section class="relative z-10 py-24 px-6 lg:px-16 max-w-7xl mx-auto" id="arch">
+  <div class="section-tag">PLATFORM ARCHITECTURE</div>
+  <h2 class="font-display text-3xl lg:text-5xl font-black tracking-tight text-white mb-3">
+    6-Tier <span class="text-[#00ffb4]">Mission Stack</span>
+  </h2>
+  <p class="font-mono text-xs text-[rgba(0,255,180,0.4)] tracking-wide mb-12 max-w-xl leading-loose">
+    Every tier independently replaceable. All signals flow through OpenTelemetry. No proprietary lock-in anywhere.
+  </p>
+
+  <div class="space-y-1">
+    <!-- T6 -->
+    <div class="border-l-4 border-[#00a8ff] border border-[rgba(0,168,255,0.15)] bg-[rgba(0,168,255,0.04)] p-5 flex flex-col lg:flex-row items-start lg:items-center gap-4 hover:bg-[rgba(0,168,255,0.07)] transition-colors">
+      <div class="flex items-center gap-6 min-w-[180px]">
+        <span class="font-display text-2xl font-black text-[rgba(0,168,255,0.3)]">T6</span>
+        <div>
+          <div class="font-mono text-[8px] text-[rgba(0,168,255,0.5)] tracking-widest">DASHBOARDS</div>
+          <div class="font-display text-sm font-bold text-white">UI / VISUALISATION</div>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <span class="pill pill-blue">HertzBeat UI</span>
+        <span class="pill pill-blue">SigNoz APM UI</span>
+        <span class="pill pill-blue">OpenSearch Dashboards</span>
+        <span class="pill pill-blue">NetBox Web UI</span>
+        <span class="pill pill-blue">Keycloak Admin</span>
+        <span class="pill pill-blue">Status Pages</span>
+        <span class="pill pill-blue">Traefik Dashboard</span>
+      </div>
+    </div>
+
+    <!-- T5 -->
+    <div class="border-l-4 border-[#00ffb4] border border-[rgba(0,255,180,0.15)] bg-[rgba(0,255,180,0.03)] p-5 flex flex-col lg:flex-row items-start lg:items-center gap-4 hover:bg-[rgba(0,255,180,0.06)] transition-colors">
+      <div class="flex items-center gap-6 min-w-[180px]">
+        <span class="font-display text-2xl font-black text-[rgba(0,255,180,0.25)]">T5</span>
+        <div>
+          <div class="font-mono text-[8px] text-[rgba(0,255,180,0.5)] tracking-widest">BACKENDS</div>
+          <div class="font-display text-sm font-bold text-white">OBSERVABILITY STORE</div>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <span class="pill pill-teal">VictoriaMetrics</span>
+        <span class="pill pill-teal">SigNoz + ClickHouse</span>
+        <span class="pill pill-teal">OpenSearch</span>
+        <span class="pill pill-teal">Jaeger Traces</span>
+      </div>
+    </div>
+
+    <!-- T4 -->
+    <div class="border-l-4 border-[#ffb800] border border-[rgba(255,184,0,0.15)] bg-[rgba(255,184,0,0.03)] p-5 flex flex-col lg:flex-row items-start lg:items-center gap-4 hover:bg-[rgba(255,184,0,0.06)] transition-colors">
+      <div class="flex items-center gap-6 min-w-[180px]">
+        <span class="font-display text-2xl font-black text-[rgba(255,184,0,0.25)]">T4</span>
+        <div>
+          <div class="font-mono text-[8px] text-[rgba(255,184,0,0.5)] tracking-widest">PIPELINE</div>
+          <div class="font-display text-sm font-bold text-white">TELEMETRY ENGINE</div>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <span class="pill pill-amber">OpenTelemetry Collector</span>
+        <span class="pill pill-amber">Fluent Bit</span>
+        <span class="pill pill-amber">Prometheus</span>
+        <span class="pill pill-amber">Alertmanager</span>
+      </div>
+    </div>
+
+    <!-- T3 -->
+    <div class="border-l-4 border-[#ff3e3e] border border-[rgba(255,62,62,0.15)] bg-[rgba(255,62,62,0.03)] p-5 flex flex-col lg:flex-row items-start lg:items-center gap-4 hover:bg-[rgba(255,62,62,0.06)] transition-colors">
+      <div class="flex items-center gap-6 min-w-[180px]">
+        <span class="font-display text-2xl font-black text-[rgba(255,62,62,0.25)]">T3</span>
+        <div>
+          <div class="font-mono text-[8px] text-[rgba(255,62,62,0.5)] tracking-widest">AGENTS</div>
+          <div class="font-display text-sm font-bold text-white">MONITORING LAYER</div>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <span class="pill pill-red">HertzBeat Collectors</span>
+        <span class="pill pill-red">lldpd Topology</span>
+        <span class="pill pill-red">Netdisco Crawler</span>
+        <span class="pill pill-red">Grafana Beyla eBPF</span>
+        <span class="pill pill-red">Node Exporter</span>
+        <span class="pill pill-red">windows_exporter</span>
+        <span class="pill pill-red">SNMP Exporter</span>
+      </div>
+    </div>
+
+    <!-- T2 -->
+    <div class="border-l-4 border-[#00ffb4] border border-[rgba(0,255,180,0.15)] bg-[rgba(0,255,180,0.03)] p-5 flex flex-col lg:flex-row items-start lg:items-center gap-4 hover:bg-[rgba(0,255,180,0.06)] transition-colors">
+      <div class="flex items-center gap-6 min-w-[180px]">
+        <span class="font-display text-2xl font-black text-[rgba(0,255,180,0.2)]">T2</span>
+        <div>
+          <div class="font-mono text-[8px] text-[rgba(0,255,180,0.5)] tracking-widest">CMDB / IPAM</div>
+          <div class="font-display text-sm font-bold text-white">SOURCE OF TRUTH</div>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <span class="pill pill-teal">NetBox DCIM + IPAM</span>
+        <span class="pill pill-teal">Diode Discovery</span>
+        <span class="pill pill-teal">Netdisco DB</span>
+        <span class="pill pill-teal">PostgreSQL</span>
+        <span class="pill pill-teal">Redis</span>
+      </div>
+    </div>
+
+    <!-- T1 -->
+    <div class="border-l-4 border-[rgba(255,255,255,0.15)] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] p-5 flex flex-col lg:flex-row items-start lg:items-center gap-4 hover:bg-[rgba(255,255,255,0.04)] transition-colors">
+      <div class="flex items-center gap-6 min-w-[180px]">
+        <span class="font-display text-2xl font-black text-[rgba(255,255,255,0.1)]">T1</span>
+        <div>
+          <div class="font-mono text-[8px] text-[rgba(255,255,255,0.3)] tracking-widest">INFRASTRUCTURE</div>
+          <div class="font-display text-sm font-bold text-white">MONITORED ASSETS</div>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <span class="pill pill-gray">Physical Servers</span>
+        <span class="pill pill-gray">Switches & Routers</span>
+        <span class="pill pill-gray">Access Points</span>
+        <span class="pill pill-gray">Printers & MFPs</span>
+        <span class="pill pill-gray">IP Phones</span>
+        <span class="pill pill-gray">Desktops & Laptops</span>
+        <span class="pill pill-gray">VMs & Containers</span>
+        <span class="pill pill-gray">Kubernetes</span>
+        <span class="pill pill-gray">AWS / Azure / GCP</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DEVICE COVERAGE -->
+<section class="relative z-10 py-24 bg-[#020a10] border-y border-[rgba(0,255,180,0.08)]" id="coverage">
+  <div class="max-w-7xl mx-auto px-6 lg:px-16">
+    <div class="section-tag">DEVICE COVERAGE</div>
+    <h2 class="font-display text-3xl lg:text-5xl font-black tracking-tight text-white mb-3">
+      Every Device. <span class="text-[#00ffb4]">Auto-Discovered.</span>
+    </h2>
+    <p class="font-mono text-xs text-[rgba(0,255,180,0.4)] tracking-wide mb-12 leading-loose">
+      // If it's on your network, InfraGuardian360 finds it, classifies it, and monitors it automatically.
+    </p>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-1">
+
+      <!-- SWITCHES -->
+      <div class="device-card border border-[rgba(0,255,180,0.12)] bg-[#060f18] p-6">
+        <div class="flex items-start justify-between mb-5">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 border border-[rgba(0,255,180,0.2)] bg-[rgba(0,255,180,0.05)] flex items-center justify-center font-mono text-lg text-[#00ffb4]">⇄</div>
+            <div>
+              <div class="font-display text-sm font-bold text-white tracking-wide">SWITCHES</div>
+              <div class="font-mono text-[8px] text-[rgba(0,255,180,0.4)] mt-0.5">Cisco · Juniper · Arista · HP</div>
+            </div>
+          </div>
+          <div class="font-mono text-[8px] border border-[rgba(0,255,180,0.3)] text-[#00ffb4] px-2 py-0.5">ACTIVE</div>
+        </div>
+        <div class="flex flex-wrap gap-1.5 mb-4">
+          <span class="font-mono text-[8px] bg-[rgba(0,255,180,0.08)] border border-[rgba(0,255,180,0.2)] text-[#00ffb4] px-2 py-0.5">SNMP v3</span>
+          <span class="font-mono text-[8px] bg-[rgba(0,255,180,0.08)] border border-[rgba(0,255,180,0.2)] text-[#00ffb4] px-2 py-0.5">LLDP</span>
+          <span class="font-mono text-[8px] bg-[rgba(0,255,180,0.08)] border border-[rgba(0,255,180,0.2)] text-[#00ffb4] px-2 py-0.5">CDP</span>
+        </div>
+        <div class="font-mono text-[10px] space-y-1.5 text-[rgba(0,255,180,0.4)]">
+          <div>&gt; <span class="text-[#d4ede6]">Port traffic</span> — per-port bytes, errors, utilisation</div>
+          <div>&gt; <span class="text-[#d4ede6]">MAC address table</span> — port-to-device mapping</div>
+          <div>&gt; <span class="text-[#d4ede6]">VLAN assignments</span> per port</div>
+          <div>&gt; <span class="text-[#d4ede6]">PoE power</span> delivered per port</div>
+          <div>&gt; <span class="text-[#d4ede6]">L2 topology</span> — full LLDP/CDP neighbour chain</div>
+        </div>
+      </div>
+
+      <!-- ROUTERS -->
+      <div class="device-card border border-[rgba(0,168,255,0.12)] bg-[#060f18] p-6">
+        <div class="flex items-start justify-between mb-5">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 border border-[rgba(0,168,255,0.2)] bg-[rgba(0,168,255,0.05)] flex items-center justify-center font-mono text-lg text-[#00a8ff]">⊕</div>
+            <div>
+              <div class="font-display text-sm font-bold text-white tracking-wide">ROUTERS & FIREWALLS</div>
+              <div class="font-mono text-[8px] text-[rgba(0,168,255,0.4)] mt-0.5">Cisco · Juniper · Fortinet · pfSense</div>
+            </div>
+          </div>
+          <div class="font-mono text-[8px] border border-[rgba(0,168,255,0.3)] text-[#00a8ff] px-2 py-0.5">ACTIVE</div>
+        </div>
+        <div class="flex flex-wrap gap-1.5 mb-4">
+          <span class="font-mono text-[8px] bg-[rgba(0,168,255,0.08)] border border-[rgba(0,168,255,0.2)] text-[#00a8ff] px-2 py-0.5">SNMP v3</span>
+          <span class="font-mono text-[8px] bg-[rgba(0,168,255,0.08)] border border-[rgba(0,168,255,0.2)] text-[#00a8ff] px-2 py-0.5">NetFlow</span>
+          <span class="font-mono text-[8px] bg-[rgba(0,168,255,0.08)] border border-[rgba(0,168,255,0.2)] text-[#00a8ff] px-2 py-0.5">LLDP</span>
+        </div>
+        <div class="font-mono text-[10px] space-y-1.5 text-[rgba(0,168,255,0.4)]">
+          <div>&gt; <span class="text-[#d4ede6]">Interface bandwidth</span> — WAN/LAN per-interface</div>
+          <div>&gt; <span class="text-[#d4ede6]">BGP / OSPF</span> — prefix counts, adjacency states</div>
+          <div>&gt; <span class="text-[#d4ede6]">VPN tunnel states</span> — IPSec/MPLS up/down</div>
+          <div>&gt; <span class="text-[#d4ede6]">NetFlow traffic</span> — top talkers, protocol breakdown</div>
+          <div>&gt; <span class="text-[#d4ede6]">CPU, memory, temperature</span></div>
+        </div>
+      </div>
+
+      <!-- ACCESS POINTS -->
+      <div class="device-card border border-[rgba(255,184,0,0.12)] bg-[#060f18] p-6">
+        <div class="flex items-start justify-between mb-5">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 border border-[rgba(255,184,0,0.2)] bg-[rgba(255,184,0,0.05)] flex items-center justify-center font-mono text-lg text-[#ffb800]">◎</div>
+            <div>
+              <div class="font-display text-sm font-bold text-white tracking-wide">ACCESS POINTS</div>
+              <div class="font-mono text-[8px] text-[rgba(255,184,0,0.4)] mt-0.5">Cisco · Ubiquiti · Aruba · Ruckus</div>
+            </div>
+          </div>
+          <div class="font-mono text-[8px] border border-[rgba(255,184,0,0.3)] text-[#ffb800] px-2 py-0.5">ACTIVE</div>
+        </div>
+        <div class="flex flex-wrap gap-1.5 mb-4">
+          <span class="font-mono text-[8px] bg-[rgba(255,184,0,0.08)] border border-[rgba(255,184,0,0.2)] text-[#ffb800] px-2 py-0.5">SNMP v3</span>
+          <span class="font-mono text-[8px] bg-[rgba(255,184,0,0.08)] border border-[rgba(255,184,0,0.2)] text-[#ffb800] px-2 py-0.5">LLDP</span>
+          <span class="font-mono text-[8px] bg-[rgba(255,184,0,0.08)] border border-[rgba(255,184,0,0.2)] text-[#ffb800] px-2 py-0.5">CDP</span>
+        </div>
+        <div class="font-mono text-[10px] space-y-1.5 text-[rgba(255,184,0,0.4)]">
+          <div>&gt; <span class="text-[#d4ede6]">WiFi clients</span> — per AP, per SSID, per radio</div>
+          <div>&gt; <span class="text-[#d4ede6]">Signal strength RSSI</span> per client</div>
+          <div>&gt; <span class="text-[#d4ede6]">Channel utilisation</span> 2.4 / 5 / 6 GHz</div>
+          <div>&gt; <span class="text-[#d4ede6]">Throughput per radio</span></div>
+          <div>&gt; <span class="text-[#d4ede6]">AP health</span> — CPU, memory, firmware</div>
+        </div>
+      </div>
+
+      <!-- PRINTERS -->
+      <div class="device-card border border-[rgba(0,255,180,0.12)] bg-[#060f18] p-6">
+        <div class="flex items-start justify-between mb-5">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 border border-[rgba(0,255,180,0.2)] bg-[rgba(0,255,180,0.05)] flex items-center justify-center font-mono text-lg text-[#00ffb4]">⊞</div>
+            <div>
+              <div class="font-display text-sm font-bold text-white tracking-wide">PRINTERS & MFPs</div>
+              <div class="font-mono text-[8px] text-[rgba(0,255,180,0.4)] mt-0.5">HP · Canon · Ricoh · Xerox · Kyocera</div>
+            </div>
+          </div>
+          <div class="font-mono text-[8px] border border-[rgba(0,255,180,0.3)] text-[#00ffb4] px-2 py-0.5">MONITOR</div>
+        </div>
+        <div class="flex flex-wrap gap-1.5 mb-4">
+          <span class="font-mono text-[8px] bg-[rgba(0,255,180,0.08)] border border-[rgba(0,255,180,0.2)] text-[#00ffb4] px-2 py-0.5">PRINTER-MIB</span>
+          <span class="font-mono text-[8px] bg-[rgba(0,255,180,0.08)] border border-[rgba(0,255,180,0.2)] text-[#00ffb4] px-2 py-0.5">mDNS</span>
+          <span class="font-mono text-[8px] bg-[rgba(0,255,180,0.08)] border border-[rgba(0,255,180,0.2)] text-[#00ffb4] px-2 py-0.5">ARP</span>
+        </div>
+        <div class="font-mono text-[10px] space-y-1.5 text-[rgba(0,255,180,0.4)]">
+          <div>&gt; <span class="text-[#d4ede6]">Toner / ink levels</span> — CMYK % with threshold alerts</div>
+          <div>&gt; <span class="text-[#d4ede6]">Page counts</span> — mono, colour, duplex, A3/A4</div>
+          <div>&gt; <span class="text-[#d4ede6]">Paper tray status</span> — loaded, empty, jam</div>
+          <div>&gt; <span class="text-[#d4ede6]">Drum / fuser life</span> — % remaining</div>
+          <div>&gt; <span class="text-[#d4ede6]">Device errors</span> — cover open, offline</div>
+        </div>
+      </div>
+
+      <!-- IP PHONES -->
+      <div class="device-card border border-[rgba(255,62,62,0.12)] bg-[#060f18] p-6">
+        <div class="flex items-start justify-between mb-5">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 border border-[rgba(255,62,62,0.2)] bg-[rgba(255,62,62,0.05)] flex items-center justify-center font-mono text-lg text-[#ff3e3e]">☏</div>
+            <div>
+              <div class="font-display text-sm font-bold text-white tracking-wide">IP PHONES</div>
+              <div class="font-mono text-[8px] text-[rgba(255,62,62,0.4)] mt-0.5">Cisco · Polycom · Yealink · Avaya</div>
+            </div>
+          </div>
+          <div class="font-mono text-[8px] border border-[rgba(255,62,62,0.3)] text-[#ff3e3e] px-2 py-0.5">ACTIVE</div>
+        </div>
+        <div class="flex flex-wrap gap-1.5 mb-4">
+          <span class="font-mono text-[8px] bg-[rgba(255,62,62,0.08)] border border-[rgba(255,62,62,0.2)] text-[#ff3e3e] px-2 py-0.5">LLDP-MED</span>
+          <span class="font-mono text-[8px] bg-[rgba(255,62,62,0.08)] border border-[rgba(255,62,62,0.2)] text-[#ff3e3e] px-2 py-0.5">CDP</span>
+          <span class="font-mono text-[8px] bg-[rgba(255,62,62,0.08)] border border-[rgba(255,62,62,0.2)] text-[#ff3e3e] px-2 py-0.5">DHCP</span>
+        </div>
+        <div class="font-mono text-[10px] space-y-1.5 text-[rgba(255,62,62,0.4)]">
+          <div>&gt; <span class="text-[#d4ede6]">Auto-classified</span> via LLDP-MED device-type TLV</div>
+          <div>&gt; <span class="text-[#d4ede6]">Voice VLAN</span> auto-assigned via LLDP-MED policy</div>
+          <div>&gt; <span class="text-[#d4ede6]">PoE power class</span> per phone tracked</div>
+          <div>&gt; <span class="text-[#d4ede6]">Physical location</span> floor/room via location TLV</div>
+          <div>&gt; <span class="text-[#d4ede6]">SIP registration</span> health via HTTP monitor</div>
+        </div>
+      </div>
+
+      <!-- LAPTOPS -->
+      <div class="device-card border border-[rgba(0,168,255,0.12)] bg-[#060f18] p-6">
+        <div class="flex items-start justify-between mb-5">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 border border-[rgba(0,168,255,0.2)] bg-[rgba(0,168,255,0.05)] flex items-center justify-center font-mono text-lg text-[#00a8ff]">▣</div>
+            <div>
+              <div class="font-display text-sm font-bold text-white tracking-wide">LAPTOPS & DESKTOPS</div>
+              <div class="font-mono text-[8px] text-[rgba(0,168,255,0.4)] mt-0.5">Windows 10/11 · macOS · Linux</div>
+            </div>
+          </div>
+          <div class="font-mono text-[8px] border border-[rgba(0,168,255,0.3)] text-[#00a8ff] px-2 py-0.5">ENDPOINT</div>
+        </div>
+        <div class="flex flex-wrap gap-1.5 mb-4">
+          <span class="font-mono text-[8px] bg-[rgba(0,168,255,0.08)] border border-[rgba(0,168,255,0.2)] text-[#00a8ff] px-2 py-0.5">lldpd</span>
+          <span class="font-mono text-[8px] bg-[rgba(0,168,255,0.08)] border border-[rgba(0,168,255,0.2)] text-[#00a8ff] px-2 py-0.5">ARP</span>
+          <span class="font-mono text-[8px] bg-[rgba(0,168,255,0.08)] border border-[rgba(0,168,255,0.2)] text-[#00a8ff] px-2 py-0.5">node_exporter</span>
+        </div>
+        <div class="font-mono text-[10px] space-y-1.5 text-[rgba(0,168,255,0.4)]">
+          <div>&gt; <span class="text-[#d4ede6]">Switch port identity</span> — which port via lldpd</div>
+          <div>&gt; <span class="text-[#d4ede6]">CPU, RAM, disk</span> — deep OS metrics</div>
+          <div>&gt; <span class="text-[#d4ede6]">Processes & services</span> — running service states</div>
+          <div>&gt; <span class="text-[#d4ede6]">Windows Events</span> — logon/logoff, security alerts</div>
+          <div>&gt; <span class="text-[#d4ede6]">Per-NIC stats</span> — bytes, errors, state</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- MISSION PHASES -->
+<section class="relative z-10 py-24 px-6 lg:px-16 max-w-7xl mx-auto" id="mission">
+  <div class="section-tag">MISSION TIMELINE</div>
+  <h2 class="font-display text-3xl lg:text-5xl font-black tracking-tight text-white mb-3">
+    12-Week <span class="text-[#00ffb4]">Build Plan</span>
+  </h2>
+  <p class="font-mono text-xs text-[rgba(0,255,180,0.4)] tracking-wide mb-12 leading-loose">
+    // Six phases. Each delivers a working, usable increment. Nothing is a throwaway step.
+  </p>
+
+  <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-1">
+
+    <div class="relative border border-[rgba(0,255,180,0.12)] bg-[#060f18] p-8 overflow-hidden hover:border-[rgba(0,255,180,0.3)] hover:bg-[rgba(0,255,180,0.03)] transition-all group">
+      <div class="phase-num text-[#00ffb4] group-hover:opacity-[0.07] transition-opacity">01</div>
+      <div class="font-mono text-[9px] text-[#00ffb4] tracking-widest mb-2">// PHASE 01 · WEEKS 1–2</div>
+      <div class="font-display text-base font-black text-white mb-1">FOUNDATION</div>
+      <div class="font-mono text-[9px] text-[rgba(0,255,180,0.4)] mb-5">CMDB + IPAM + SSO</div>
+      <ul class="font-mono text-[10px] space-y-1.5 text-[rgba(255,255,255,0.4)]">
+        <li>&gt; NetBox Docker Compose</li>
+        <li>&gt; Keycloak SSO + LDAP</li>
+        <li>&gt; Traefik reverse proxy + TLS</li>
+        <li>&gt; Git repo + branding</li>
+        <li>&gt; Domain + SSL cert</li>
+      </ul>
+    </div>
+
+    <div class="relative border border-[rgba(0,168,255,0.12)] bg-[#060f18] p-8 overflow-hidden hover:border-[rgba(0,168,255,0.3)] hover:bg-[rgba(0,168,255,0.03)] transition-all group">
+      <div class="phase-num text-[#00a8ff] group-hover:opacity-[0.07] transition-opacity">02</div>
+      <div class="font-mono text-[9px] text-[#00a8ff] tracking-widest mb-2">// PHASE 02 · WEEKS 2–3</div>
+      <div class="font-display text-base font-black text-white mb-1">DISCOVERY</div>
+      <div class="font-mono text-[9px] text-[rgba(0,168,255,0.4)] mb-5">AUTO-POPULATE CMDB</div>
+      <ul class="font-mono text-[10px] space-y-1.5 text-[rgba(255,255,255,0.4)]">
+        <li>&gt; lldpd on all Linux/Mac hosts</li>
+        <li>&gt; SNMP on all network devices</li>
+        <li>&gt; Netdisco seed + LLDP crawl</li>
+        <li>&gt; Netdisco → NetBox API sync</li>
+        <li>&gt; Auto-classify all device types</li>
+      </ul>
+    </div>
+
+    <div class="relative border border-[rgba(255,184,0,0.12)] bg-[#060f18] p-8 overflow-hidden hover:border-[rgba(255,184,0,0.3)] hover:bg-[rgba(255,184,0,0.03)] transition-all group">
+      <div class="phase-num text-[#ffb800] group-hover:opacity-[0.07] transition-opacity">03</div>
+      <div class="font-mono text-[9px] text-[#ffb800] tracking-widest mb-2">// PHASE 03 · WEEKS 3–5</div>
+      <div class="font-display text-base font-black text-white mb-1">MONITORING</div>
+      <div class="font-mono text-[9px] text-[rgba(255,184,0,0.4)] mb-5">ALL DEVICES · ALL CLOUDS</div>
+      <ul class="font-mono text-[10px] space-y-1.5 text-[rgba(255,255,255,0.4)]">
+        <li>&gt; Apache HertzBeat 130+ templates</li>
+        <li>&gt; Prometheus + Node Exporters</li>
+        <li>&gt; VictoriaMetrics long-term storage</li>
+        <li>&gt; AWS / Azure / GCP exporters</li>
+        <li>&gt; Alertmanager routing</li>
+      </ul>
+    </div>
+
+    <div class="relative border border-[rgba(255,62,62,0.12)] bg-[#060f18] p-8 overflow-hidden hover:border-[rgba(255,62,62,0.3)] hover:bg-[rgba(255,62,62,0.03)] transition-all group">
+      <div class="phase-num text-[#ff3e3e] group-hover:opacity-[0.07] transition-opacity">04</div>
+      <div class="font-mono text-[9px] text-[#ff3e3e] tracking-widest mb-2">// PHASE 04 · WEEKS 5–7</div>
+      <div class="font-display text-base font-black text-white mb-1">DEEP MONITORING</div>
+      <div class="font-mono text-[9px] text-[rgba(255,62,62,0.4)] mb-5">EBPF + APM + KUBERNETES</div>
+      <ul class="font-mono text-[10px] space-y-1.5 text-[rgba(255,255,255,0.4)]">
+        <li>&gt; Grafana Beyla eBPF DaemonSet</li>
+        <li>&gt; SigNoz + ClickHouse APM</li>
+        <li>&gt; OTel SDK auto-instrumentation</li>
+        <li>&gt; K8s kube-state-metrics</li>
+        <li>&gt; Service dependency maps</li>
+      </ul>
+    </div>
+
+    <div class="relative border border-[rgba(0,255,180,0.12)] bg-[#060f18] p-8 overflow-hidden hover:border-[rgba(0,255,180,0.3)] hover:bg-[rgba(0,255,180,0.03)] transition-all group">
+      <div class="phase-num text-[#00ffb4] group-hover:opacity-[0.07] transition-opacity">05</div>
+      <div class="font-mono text-[9px] text-[#00ffb4] tracking-widest mb-2">// PHASE 05 · WEEKS 7–9</div>
+      <div class="font-display text-base font-black text-white mb-1">LOG ANALYTICS</div>
+      <div class="font-mono text-[9px] text-[rgba(0,255,180,0.4)] mb-5">CENTRALISED · SEARCHABLE</div>
+      <ul class="font-mono text-[10px] space-y-1.5 text-[rgba(255,255,255,0.4)]">
+        <li>&gt; OpenSearch cluster</li>
+        <li>&gt; Fluent Bit on all hosts</li>
+        <li>&gt; Docker container logs</li>
+        <li>&gt; AWS CloudTrail + Azure logs</li>
+        <li>&gt; RBAC + encryption</li>
+      </ul>
+    </div>
+
+    <div class="relative border border-[rgba(0,168,255,0.12)] bg-[#060f18] p-8 overflow-hidden hover:border-[rgba(0,168,255,0.3)] hover:bg-[rgba(0,168,255,0.03)] transition-all group">
+      <div class="phase-num text-[#00a8ff] group-hover:opacity-[0.07] transition-opacity">06</div>
+      <div class="font-mono text-[9px] text-[#00a8ff] tracking-widest mb-2">// PHASE 06 · WEEKS 9–12</div>
+      <div class="font-display text-base font-black text-white mb-1">LAUNCH</div>
+      <div class="font-mono text-[9px] text-[rgba(0,168,255,0.4)] mb-5">BRAND · DOCUMENT · RELEASE</div>
+      <ul class="font-mono text-[10px] space-y-1.5 text-[rgba(255,255,255,0.4)]">
+        <li>&gt; Custom branded portal UI</li>
+        <li>&gt; Helm chart for Kubernetes</li>
+        <li>&gt; One-command installer</li>
+        <li>&gt; README + architecture docs</li>
+        <li>&gt; GitHub release v1.0.0</li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+<!-- LICENCE ECONOMICS -->
+<section class="relative z-10 py-24 bg-[#020a10] border-y border-[rgba(0,255,180,0.08)]">
+  <div class="max-w-7xl mx-auto px-6 lg:px-16">
+    <div class="section-tag">LICENCE ECONOMICS</div>
+    <h2 class="font-display text-3xl lg:text-5xl font-black tracking-tight text-white mb-3">
+      What You <span class="text-[#00ffb4]">Stop Paying</span>
+    </h2>
+    <p class="font-mono text-xs text-[rgba(0,255,180,0.4)] tracking-wide mb-12 leading-loose">
+      // All components Apache 2.0 / MIT / ISC. No per-seat fees. No subscriptions. No invoices.
+    </p>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-1 mb-1">
+      <div class="border border-[rgba(255,62,62,0.15)] bg-[rgba(255,62,62,0.04)] p-6">
+        <div class="font-mono text-[9px] text-[rgba(255,255,255,0.3)] tracking-widest mb-3">Device42 (CMDB)</div>
+        <div class="font-display text-xl font-black text-[#ff3e3e]">£20k–100k</div>
+        <div class="font-mono text-[8px] text-[rgba(255,62,62,0.4)] mt-1">PER YEAR</div>
+      </div>
+      <div class="border border-[rgba(255,62,62,0.15)] bg-[rgba(255,62,62,0.04)] p-6">
+        <div class="font-mono text-[9px] text-[rgba(255,255,255,0.3)] tracking-widest mb-3">Datadog Infrastructure</div>
+        <div class="font-display text-xl font-black text-[#ff3e3e]">£18–23</div>
+        <div class="font-mono text-[8px] text-[rgba(255,62,62,0.4)] mt-1">PER HOST / MONTH</div>
+      </div>
+      <div class="border border-[rgba(255,62,62,0.15)] bg-[rgba(255,62,62,0.04)] p-6">
+        <div class="font-mono text-[9px] text-[rgba(255,255,255,0.3)] tracking-widest mb-3">Splunk Log Analytics</div>
+        <div class="font-display text-xl font-black text-[#ff3e3e]">£150+</div>
+        <div class="font-mono text-[8px] text-[rgba(255,62,62,0.4)] mt-1">PER GB / DAY</div>
+      </div>
+      <div class="border border-[rgba(255,62,62,0.15)] bg-[rgba(255,62,62,0.04)] p-6">
+        <div class="font-mono text-[9px] text-[rgba(255,255,255,0.3)] tracking-widest mb-3">SolarWinds NPM</div>
+        <div class="font-display text-xl font-black text-[#ff3e3e]">£20k–60k</div>
+        <div class="font-mono text-[8px] text-[rgba(255,62,62,0.4)] mt-1">PER YEAR</div>
+      </div>
+    </div>
+
+    <!-- IG360 WINNER CARD -->
+    <div class="border border-[rgba(0,255,180,0.4)] bg-[rgba(0,255,180,0.06)] p-8 flex flex-col md:flex-row items-center justify-between gap-6 glow-teal">
+      <div>
+        <div class="font-mono text-[9px] text-[rgba(0,255,180,0.6)] tracking-widest mb-2">// THE ALTERNATIVE</div>
+        <div class="font-display text-2xl font-black text-[#00ffb4]">InfraGuardian360</div>
+        <div class="font-mono text-[9px] text-[rgba(0,255,180,0.5)] mt-1">UNLIMITED NODES · ALL FEATURES · FOREVER</div>
+      </div>
+      <div class="text-right">
+        <div class="font-display text-5xl font-black text-[#00ffb4] text-glow">£0</div>
+        <div class="font-mono text-[9px] text-[rgba(0,255,180,0.5)] mt-1">ZERO LICENCE COST / EVER</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LICENCE BAND -->
+<div class="relative z-10 border-y border-[rgba(0,255,180,0.1)] bg-[rgba(0,255,180,0.04)] py-6 px-6 lg:px-16">
+  <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+    <div>
+      <div class="font-display text-sm font-black text-[#00ffb4] mb-1">Apache 2.0 · MIT · ISC — All Components</div>
+      <div class="font-mono text-[10px] text-[rgba(0,255,180,0.4)] leading-loose">
+        Fork it. Rename it. Sell it. Deploy for clients. Keep changes private. One obligation: a 10-line NOTICE file.
+      </div>
+    </div>
+    <div class="flex items-center gap-3 border border-[rgba(0,255,180,0.35)] px-4 py-2 bg-[rgba(0,255,180,0.05)] shrink-0">
+      <div class="w-2 h-2 rounded-full bg-[#00ffb4] status-pulse"></div>
+      <span class="font-mono text-[9px] text-[#00ffb4] tracking-widest">ZERO IP LIABILITY</span>
+    </div>
+  </div>
+</div>
+
+<!-- DEPLOY CTA -->
+<section class="relative z-10 py-32 px-6 lg:px-16 text-center" id="deploy">
+  <div class="absolute inset-0 pointer-events-none" style="background:radial-gradient(ellipse 60% 50% at 50% 50%,rgba(0,255,180,0.06) 0%,transparent 70%)"></div>
+  <div class="relative max-w-4xl mx-auto">
+    <div class="section-tag justify-center">INITIATE DEPLOYMENT</div>
+    <h2 class="font-display text-4xl lg:text-6xl font-black tracking-tight text-white mb-4">
+      One Command.<br><span class="text-[#00ffb4] text-glow">Full Stack Live.</span>
+    </h2>
+    <p class="font-mono text-xs text-[rgba(0,255,180,0.4)] tracking-wide mb-12">
+      // git clone · configure .env · docker compose up · done
+    </p>
+
+    <div class="code-block p-8 text-left mb-10 max-w-2xl mx-auto">
+      <div class="flex items-center gap-2 mb-6 pb-4 border-b border-[rgba(0,255,180,0.1)]">
+        <div class="w-3 h-3 rounded-full bg-[rgba(255,62,62,0.5)]"></div>
+        <div class="w-3 h-3 rounded-full bg-[rgba(255,184,0,0.5)]"></div>
+        <div class="w-3 h-3 rounded-full bg-[rgba(0,255,180,0.5)]"></div>
+        <span class="font-mono text-[9px] text-[rgba(0,255,180,0.3)] ml-3 tracking-widest">DOCKER-COMPOSE.CORE.YML</span>
+      </div>
+      <div class="font-mono text-sm text-[rgba(0,255,180,0.4)] leading-loose">
+        <div><span class="text-[rgba(0,255,180,0.3)]"># Clone the repo</span></div>
+        <div><span class="text-[#00ffb4]">git clone</span> <span class="text-[#00a8ff]">https://github.com/Gsingh3001/infraguardian360</span></div>
+        <div><span class="text-[#00ffb4]">cd</span> infraguardian360</div>
+        <div class="mt-2"><span class="text-[rgba(0,255,180,0.3)]"># Configure your secrets</span></div>
+        <div><span class="text-[#00ffb4]">cp</span> config/.env.example .env</div>
+        <div class="mt-2"><span class="text-[rgba(0,255,180,0.3)]"># Launch the full stack</span></div>
+        <div><span class="text-[#00ffb4]">docker compose</span> <span class="text-white">-f docker/docker-compose.core.yml</span> <span class="text-[#ffb800]">up -d</span></div>
+        <div class="mt-4 text-[rgba(0,255,180,0.6)]">▌ NetBox live at https://netbox.your-domain.com</div>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap gap-4 justify-center">
+      <a href="https://github.com/Gsingh3001/infraguardian360" class="btn-primary">VIEW ON GITHUB →</a>
+      <a href="https://github.com/Gsingh3001/infraguardian360/blob/main/README.md" class="btn-ghost">QUICKSTART GUIDE</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="relative z-10 border-t border-[rgba(0,255,180,0.1)] bg-[#020a10] px-6 lg:px-16 py-10">
+  <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+    <div>
+      <div class="font-display text-sm font-black text-[#00ffb4] mb-1">[ INFRAGUARDIAN360 ]</div>
+      <div class="font-mono text-[9px] text-[rgba(0,255,180,0.3)] tracking-widest">© 2026 // ORBITAL_INTERFACE_v1.0 // APACHE 2.0</div>
+    </div>
+    <div class="font-mono text-[9px] text-[rgba(0,255,180,0.3)] tracking-widest text-center">
+      // Apache 2.0 · MIT · ISC · Zero licence cost · Full fork + rebrand rights
+    </div>
+    <div class="flex gap-6 font-mono text-[9px] tracking-widest">
+      <a href="https://github.com/Gsingh3001/infraguardian360" class="text-[rgba(0,255,180,0.4)] hover:text-[#00ffb4] transition-colors">GITHUB</a>
+      <a href="https://github.com/Gsingh3001/infraguardian360/blob/main/NOTICE" class="text-[rgba(0,255,180,0.4)] hover:text-[#00ffb4] transition-colors">NOTICE</a>
+      <a href="https://github.com/Gsingh3001/infraguardian360/blob/main/LICENSE" class="text-[rgba(0,255,180,0.4)] hover:text-[#00ffb4] transition-colors">LICENCE</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
