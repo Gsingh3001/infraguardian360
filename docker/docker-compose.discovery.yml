@@ -1,0 +1,123 @@
+version: "3.9"
+
+# ============================================================
+#  InfraGuardian360 — Discovery Stack (Phase 2)
+#  Netdisco + NetBox Discovery (Diode)
+#  Crawls LLDP/CDP/SNMP from seed switch → auto-populates NetBox
+#  Usage: docker compose -f docker/docker-compose.discovery.yml up -d
+#  Requires: docker-compose.core.yml already running
+# ============================================================
+
+services:
+
+  # ── Netdisco ─────────────────────────────────────────────────
+  # L2/L3 topology crawler — walks CDP/LLDP chains from seed device
+  # Discovers switches, routers, APs, IP phones automatically
+  netdisco:
+    image: netdisco/netdisco:latest
+    container_name: ig360-netdisco
+    restart: unless-stopped
+    depends_on:
+      - netdisco-db
+    environment:
+      NETDISCO_DB_HOST: netdisco-db
+      NETDISCO_DB_NAME: netdisco
+      NETDISCO_DB_USER: netdisco
+      NETDISCO_DB_PASS: ${NETDISCO_DB_PASSWORD}
+    volumes:
+      - ./config/netdisco/netdisco.conf:/home/netdisco/environments/deployment.yml
+      - netdisco-logs:/home/netdisco/logs
+    networks:
+      - ig360
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.netdisco.rule=Host(`netdisco.${DOMAIN}`)"
+      - "traefik.http.routers.netdisco.tls.certresolver=le"
+      - "traefik.http.services.netdisco.loadbalancer.server.port=5000"
+
+  # ── Netdisco Worker ──────────────────────────────────────────
+  # Background job processor — runs discovery, polling, arpnip jobs
+  netdisco-worker:
+    image: netdisco/netdisco:latest
+    container_name: ig360-netdisco-worker
+    restart: unless-stopped
+    command: worker
+    depends_on:
+      - netdisco
+      - netdisco-db
+    environment:
+      NETDISCO_DB_HOST: netdisco-db
+      NETDISCO_DB_NAME: netdisco
+      NETDISCO_DB_USER: netdisco
+      NETDISCO_DB_PASS: ${NETDISCO_DB_PASSWORD}
+    volumes:
+      - ./config/netdisco/netdisco.conf:/home/netdisco/environments/deployment.yml
+    networks:
+      - ig360
+
+  # ── Netdisco PostgreSQL ──────────────────────────────────────
+  # Dedicated DB for Netdisco topology data (separate from NetBox DB)
+  netdisco-db:
+    image: postgres:16-alpine
+    container_name: ig360-netdisco-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: netdisco
+      POSTGRES_USER: netdisco
+      POSTGRES_PASSWORD: ${NETDISCO_DB_PASSWORD}
+    volumes:
+      - netdisco-data:/var/lib/postgresql/data
+    networks:
+      - ig360
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U netdisco"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── NetBox Discovery (Diode) ─────────────────────────────────
+  # Auto-discovery agent that scans networks and pushes to NetBox API
+  # Handles segmented/remote sites — runs anywhere, phones home to NetBox
+  netbox-discovery:
+    image: ghcr.io/netbox-community/netbox-discovery:latest
+    container_name: ig360-netbox-discovery
+    restart: unless-stopped
+    environment:
+      DIODE_TARGET: grpc://netbox:8080/diode
+      DIODE_API_KEY: ${NETBOX_DIODE_API_KEY}
+      NETDISCO_HOST: netdisco
+      NETDISCO_PORT: 5000
+    volumes:
+      - ./config/discovery/discovery.yml:/app/config/discovery.yml
+    networks:
+      - ig360
+    depends_on:
+      - netdisco
+
+  # ── Netdisco Scheduler ───────────────────────────────────────
+  # Runs discovery jobs on schedule — daily full crawl, hourly ARP refresh
+  netdisco-scheduler:
+    image: netdisco/netdisco:latest
+    container_name: ig360-netdisco-scheduler
+    restart: unless-stopped
+    command: scheduler
+    depends_on:
+      - netdisco
+      - netdisco-db
+    environment:
+      NETDISCO_DB_HOST: netdisco-db
+      NETDISCO_DB_NAME: netdisco
+      NETDISCO_DB_USER: netdisco
+      NETDISCO_DB_PASS: ${NETDISCO_DB_PASSWORD}
+    volumes:
+      - ./config/netdisco/netdisco.conf:/home/netdisco/environments/deployment.yml
+    networks:
+      - ig360
+
+networks:
+  ig360:
+    external: true
+
+volumes:
+  netdisco-data:
+  netdisco-logs:

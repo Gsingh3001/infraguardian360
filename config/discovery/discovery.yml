@@ -1,0 +1,52 @@
+# ============================================================
+#  NetBox Discovery (Diode) Configuration
+#  Auto-populates NetBox from network scans
+# ============================================================
+
+sources:
+  # Discover from Netdisco topology database
+  - name: netdisco
+    type: netdisco
+    config:
+      host: netdisco
+      port: 5000
+      sync_interval: 3600    # Push to NetBox every hour
+
+  # Direct SNMP range scan (supplements Netdisco)
+  - name: snmp_scan
+    type: snmp
+    config:
+      ranges:
+        - 192.168.1.0/24     # Replace with your subnets
+        - 192.168.0.0/24
+      community: public
+      version: 2c
+      scan_interval: 7200    # Scan every 2 hours
+
+netbox:
+  # NetBox API connection
+  url: http://netbox:8080
+  token: ${NETBOX_DIODE_API_KEY}
+  verify_ssl: false
+
+# What to create in NetBox automatically
+sync:
+  devices: true              # Create device records
+  interfaces: true           # Create interface records
+  ip_addresses: true         # Create IP address records
+  vlans: true                # Create VLAN records
+  prefixes: true             # Create IP prefix records
+  cables: false              # Cable connections — manual review recommended
+
+# Default values for auto-created objects
+defaults:
+  site: Auto-Discovered
+  tenant: ""
+  device_role: Unknown
+  status: active
+  tag: auto-discovered
+
+# Conflict resolution — what to do when device already exists
+on_conflict:
+  update_existing: true      # Update existing records
+  overwrite_manual: false    # Never overwrite manually edited fields
