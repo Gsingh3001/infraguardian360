@@ -1,0 +1,139 @@
+version: "3.9"
+
+# ============================================================
+#  InfraGuardian360 — Monitoring Stack (Phase 3)
+#  HertzBeat + Prometheus + VictoriaMetrics + Alertmanager
+#  Usage: docker compose -f docker/docker-compose.monitoring.yml up -d
+# ============================================================
+
+services:
+
+  # ── Apache HertzBeat ─────────────────────────────────────────
+  hertzbeat:
+    image: apache/hertzbeat:latest
+    container_name: ig360-hertzbeat
+    restart: unless-stopped
+    environment:
+      LANG: en_US.UTF-8
+      TZ: Europe/London
+    volumes:
+      - ./config/hertzbeat/application.yml:/opt/hertzbeat/config/application.yml
+      - ./config/hertzbeat/define:/opt/hertzbeat/define
+      - hertzbeat-data:/opt/hertzbeat/data
+    networks:
+      - ig360
+    depends_on:
+      - victoria-metrics
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.hertzbeat.rule=Host(`monitor.${DOMAIN}`)"
+      - "traefik.http.routers.hertzbeat.tls.certresolver=le"
+      - "traefik.http.services.hertzbeat.loadbalancer.server.port=1157"
+
+  # ── Prometheus ───────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ig360-prometheus
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=15d"
+      - "--web.enable-lifecycle"
+      - "--web.enable-admin-api"
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./config/prometheus/alerts:/etc/prometheus/alerts
+      - prometheus-data:/prometheus
+    networks:
+      - ig360
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.prometheus.rule=Host(`prometheus.${DOMAIN}`)"
+      - "traefik.http.routers.prometheus.tls.certresolver=le"
+      - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
+
+  # ── VictoriaMetrics ──────────────────────────────────────────
+  victoria-metrics:
+    image: victoriametrics/victoria-metrics:latest
+    container_name: ig360-victoria
+    restart: unless-stopped
+    command:
+      - "--storageDataPath=/victoria-metrics-data"
+      - "--retentionPeriod=12"
+      - "--httpListenAddr=:8428"
+    volumes:
+      - vm-data:/victoria-metrics-data
+    networks:
+      - ig360
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.victoria.rule=Host(`metrics.${DOMAIN}`)"
+      - "traefik.http.routers.victoria.tls.certresolver=le"
+      - "traefik.http.services.victoria.loadbalancer.server.port=8428"
+
+  # ── Alertmanager ─────────────────────────────────────────────
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: ig360-alertmanager
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+    volumes:
+      - ./config/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - alertmanager-data:/alertmanager
+    networks:
+      - ig360
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.alertmanager.rule=Host(`alerts.${DOMAIN}`)"
+      - "traefik.http.routers.alertmanager.tls.certresolver=le"
+      - "traefik.http.services.alertmanager.loadbalancer.server.port=9093"
+
+  # ── OpenTelemetry Collector ──────────────────────────────────
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: ig360-otel
+    restart: unless-stopped
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./config/otel/collector.yaml:/etc/otelcol/config.yaml
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    networks:
+      - ig360
+
+  # ── SNMP Exporter ────────────────────────────────────────────
+  snmp-exporter:
+    image: prom/snmp-exporter:latest
+    container_name: ig360-snmp
+    restart: unless-stopped
+    volumes:
+      - ./config/prometheus/snmp/snmp.yml:/etc/snmp_exporter/snmp.yml
+    networks:
+      - ig360
+
+  # ── Node Exporter (monitors the host server itself) ──────────
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: ig360-node-exporter
+    restart: unless-stopped
+    pid: host
+    command:
+      - "--path.rootfs=/host"
+    volumes:
+      - /:/host:ro,rslave
+    networks:
+      - ig360
+
+networks:
+  ig360:
+    external: true
+
+volumes:
+  hertzbeat-data:
+  prometheus-data:
+  vm-data:
+  alertmanager-data:

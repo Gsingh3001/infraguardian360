@@ -1,0 +1,50 @@
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+  external_labels:
+    monitor: infraguardian360
+    environment: production
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+rule_files:
+  - /etc/prometheus/alerts/*.yml
+
+scrape_configs:
+
+  # ── Host server itself ───────────────────────────────────────
+  - job_name: node-exporter
+    static_configs:
+      - targets: ["node-exporter:9100"]
+        labels:
+          instance: ig360-server
+
+  # ── SNMP network devices ─────────────────────────────────────
+  - job_name: snmp-switches
+    static_configs:
+      - targets:
+          - 192.168.1.1   # replace with your switch IPs
+          - 192.168.1.2
+    metrics_path: /snmp
+    params:
+      module: [if_mib]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: snmp-exporter:9116
+
+  # ── VictoriaMetrics itself ───────────────────────────────────
+  - job_name: victoria-metrics
+    static_configs:
+      - targets: ["victoria-metrics:8428"]
+
+  # ── Prometheus itself ────────────────────────────────────────
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]

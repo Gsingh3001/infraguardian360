@@ -1,0 +1,59 @@
+groups:
+  - name: infrastructure
+    rules:
+
+      # ── Host alerts ─────────────────────────────────────────
+      - alert: HostDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Host {{ $labels.instance }} is down"
+          description: "{{ $labels.instance }} has been unreachable for 2 minutes"
+
+      - alert: HighCPU
+        expr: 100 - (avg by(instance)(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU on {{ $labels.instance }}"
+          description: "CPU usage is {{ $value }}% for 5 minutes"
+
+      - alert: HighMemory
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory on {{ $labels.instance }}"
+          description: "Memory usage is {{ $value }}%"
+
+      - alert: DiskAlmostFull
+        expr: (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disk almost full on {{ $labels.instance }}"
+          description: "Disk {{ $labels.mountpoint }} is {{ $value }}% full"
+
+      # ── Network device alerts ───────────────────────────────
+      - alert: NetworkInterfaceDown
+        expr: ifOperStatus != 1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Interface down on {{ $labels.instance }}"
+          description: "Interface {{ $labels.ifDescr }} is down"
+
+      - alert: HighBandwidthUtilisation
+        expr: rate(ifHCInOctets[5m]) * 8 / ifHighSpeed > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High bandwidth on {{ $labels.instance }}"
+          description: "Interface {{ $labels.ifDescr }} utilisation is {{ $value }}%"
