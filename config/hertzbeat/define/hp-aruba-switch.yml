@@ -1,0 +1,201 @@
+# ===========================================================
+#  InfraGuardian360 — HertzBeat Monitor Template
+#  Device: HP / Aruba Switch (2530, 2540, 2930, 5400)
+#  Protocol: SNMP v2c/v3
+#  Vendor OID: .1.3.6.1.4.1.11 (HP)
+# ===========================================================
+
+category: network
+app: hp_aruba_switch
+name:
+  zh-CN: HP/Aruba 交换机
+  en-US: HP/Aruba Switch
+
+params:
+  - field: host
+    name:
+      en-US: Host Address
+    type: host
+    required: true
+  - field: port
+    name:
+      en-US: Port
+    type: number
+    defaultValue: 161
+    required: true
+  - field: snmpVersion
+    name:
+      en-US: SNMP Version
+    type: radio
+    required: true
+    options:
+      - label: "v2c"
+        value: 2
+      - label: "v3"
+        value: 3
+    defaultValue: 2
+  - field: community
+    name:
+      en-US: SNMP Community
+    type: text
+    defaultValue: public
+  - field: snmpUsername
+    name:
+      en-US: SNMP v3 Username
+    type: text
+    required: false
+    hide: true
+  - field: snmpAuthPassword
+    name:
+      en-US: Auth Password
+    type: password
+    required: false
+    hide: true
+  - field: snmpPrivPassword
+    name:
+      en-US: Priv Password
+    type: password
+    required: false
+    hide: true
+
+metrics:
+
+  - name: device_info
+    priority: 0
+    fields:
+      - field: hostname
+        type: 1
+        label: true
+      - field: description
+        type: 1
+      - field: firmware_version
+        type: 1
+      - field: serial_number
+        type: 1
+      - field: uptime_seconds
+        type: 0
+        unit: s
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        hostname:         1.3.6.1.2.1.1.5.0
+        description:      1.3.6.1.2.1.1.1.0
+        firmware_version: 1.3.6.1.4.1.11.2.14.11.5.1.1.3.0
+        serial_number:    1.3.6.1.4.1.11.2.14.11.5.1.1.9.0
+        uptime_seconds:   1.3.6.1.2.1.1.3.0
+
+  - name: cpu_memory
+    priority: 1
+    fields:
+      - field: cpu_usage_percent
+        type: 0
+        unit: '%'
+      - field: memory_total_bytes
+        type: 0
+        unit: bytes
+      - field: memory_free_bytes
+        type: 0
+        unit: bytes
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        cpu_usage_percent:  1.3.6.1.4.1.11.2.14.11.5.1.9.6.1.0
+        memory_total_bytes: 1.3.6.1.4.1.11.2.14.11.5.1.9.1.1.0
+        memory_free_bytes:  1.3.6.1.4.1.11.2.14.11.5.1.9.1.2.0
+
+  - name: interface_traffic
+    priority: 2
+    fields:
+      - field: port_name
+        type: 1
+        label: true
+      - field: admin_status
+        type: 1
+      - field: oper_status
+        type: 1
+      - field: in_octets
+        type: 0
+        unit: bytes
+      - field: out_octets
+        type: 0
+        unit: bytes
+      - field: in_errors
+        type: 0
+      - field: out_errors
+        type: 0
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        port_name:    1.3.6.1.2.1.31.1.1.1.1
+        admin_status: 1.3.6.1.2.1.2.2.1.7
+        oper_status:  1.3.6.1.2.1.2.2.1.8
+        in_octets:    1.3.6.1.2.1.31.1.1.1.6
+        out_octets:   1.3.6.1.2.1.31.1.1.1.10
+        in_errors:    1.3.6.1.2.1.2.2.1.14
+        out_errors:   1.3.6.1.2.1.2.2.1.20
+
+  - name: poe_power
+    priority: 3
+    fields:
+      - field: port_index
+        type: 1
+        label: true
+      - field: poe_status
+        type: 1
+      - field: poe_power_mw
+        type: 0
+        unit: mW
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        poe_status:   1.3.6.1.2.1.105.1.1.1.6
+        poe_power_mw: 1.3.6.1.2.1.105.1.1.1.8
+
+alerts:
+  - metric: cpu_memory
+    field: cpu_usage_percent
+    preset: true
+    expr: "cpu_usage_percent > 85"
+    for: 5m
+    severity: warning
+    content: "HP/Aruba Switch ${host} CPU at ${cpu_usage_percent}%"
+
+  - metric: interface_traffic
+    field: oper_status
+    preset: true
+    expr: "oper_status == 2 && admin_status == 1"
+    for: 2m
+    severity: critical
+    content: "Port ${port_name} on HP/Aruba Switch ${host} is DOWN"

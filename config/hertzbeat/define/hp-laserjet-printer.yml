@@ -1,0 +1,223 @@
+# ===========================================================
+#  InfraGuardian360 — HertzBeat Monitor Template
+#  Device: HP LaserJet / OfficeJet / PageWide Printers
+#  Works on: ALL HP printers + most Canon/Ricoh/Xerox/Kyocera
+#  Protocol: SNMP v1/v2c (PRINTER-MIB RFC 3805)
+# ===========================================================
+
+category: network
+app: hp_laserjet_printer
+name:
+  zh-CN: HP 激光打印机
+  en-US: HP LaserJet Printer
+
+params:
+  - field: host
+    name:
+      en-US: Host Address
+    type: host
+    required: true
+  - field: port
+    name:
+      en-US: SNMP Port
+    type: number
+    defaultValue: 161
+    required: true
+  - field: snmpVersion
+    name:
+      en-US: SNMP Version
+    type: radio
+    required: true
+    options:
+      - label: "v1"
+        value: 1
+      - label: "v2c"
+        value: 2
+    defaultValue: 1
+  - field: community
+    name:
+      en-US: SNMP Community
+    type: text
+    defaultValue: public
+
+metrics:
+
+  - name: printer_info
+    priority: 0
+    fields:
+      - field: printer_name
+        type: 1
+        label: true
+      - field: description
+        type: 1
+      - field: model
+        type: 1
+      - field: serial_number
+        type: 1
+      - field: firmware_version
+        type: 1
+      - field: printer_status
+        type: 1
+      - field: uptime_seconds
+        type: 0
+        unit: s
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      timeout: 15000
+      oids:
+        printer_name:     1.3.6.1.2.1.1.5.0
+        description:      1.3.6.1.2.1.1.1.0
+        model:            1.3.6.1.4.1.11.2.3.9.1.1.7.0
+        serial_number:    1.3.6.1.4.1.11.2.3.9.1.1.10.0
+        firmware_version: 1.3.6.1.4.1.11.2.3.9.1.1.3.0
+        printer_status:   1.3.6.1.2.1.25.3.5.1.1.1
+        uptime_seconds:   1.3.6.1.2.1.1.3.0
+
+  - name: consumables
+    priority: 1
+    fields:
+      - field: marker_name
+        type: 1
+        label: true
+      - field: marker_color
+        type: 1
+      - field: level_percent
+        type: 0
+        unit: '%'
+      - field: max_capacity
+        type: 0
+      - field: current_level
+        type: 0
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      timeout: 15000
+      oids:
+        marker_name:    1.3.6.1.2.1.43.11.1.1.6.1
+        marker_color:   1.3.6.1.2.1.43.12.1.1.4.1
+        max_capacity:   1.3.6.1.2.1.43.11.1.1.8.1
+        current_level:  1.3.6.1.2.1.43.11.1.1.9.1
+
+  - name: page_counts
+    priority: 2
+    fields:
+      - field: total_pages
+        type: 0
+      - field: mono_pages
+        type: 0
+      - field: colour_pages
+        type: 0
+      - field: duplex_pages
+        type: 0
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      timeout: 15000
+      oids:
+        total_pages:   1.3.6.1.2.1.43.10.2.1.4.1.1
+        mono_pages:    1.3.6.1.4.1.11.2.3.9.4.2.1.1.16.1.0
+        colour_pages:  1.3.6.1.4.1.11.2.3.9.4.2.1.1.16.2.0
+        duplex_pages:  1.3.6.1.4.1.11.2.3.9.4.2.1.1.16.5.0
+
+  - name: paper_trays
+    priority: 3
+    fields:
+      - field: tray_name
+        type: 1
+        label: true
+      - field: tray_status
+        type: 1
+      - field: tray_capacity_sheets
+        type: 0
+      - field: tray_current_level
+        type: 0
+      - field: media_size
+        type: 1
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      timeout: 15000
+      oids:
+        tray_name:             1.3.6.1.2.1.43.8.2.1.13.1
+        tray_status:           1.3.6.1.2.1.43.8.2.1.11.1
+        tray_capacity_sheets:  1.3.6.1.2.1.43.8.2.1.9.1
+        tray_current_level:    1.3.6.1.2.1.43.8.2.1.10.1
+        media_size:            1.3.6.1.2.1.43.8.2.1.15.1
+
+  - name: printer_errors
+    priority: 4
+    fields:
+      - field: error_index
+        type: 1
+        label: true
+      - field: error_description
+        type: 1
+      - field: error_severity
+        type: 1
+      - field: error_time
+        type: 1
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      timeout: 15000
+      oids:
+        error_description: 1.3.6.1.2.1.43.18.1.1.7.1
+        error_severity:    1.3.6.1.2.1.43.18.1.1.2.1
+        error_time:        1.3.6.1.2.1.43.18.1.1.5.1
+
+alerts:
+  - metric: consumables
+    field: level_percent
+    preset: true
+    expr: "level_percent < 10"
+    for: 1m
+    severity: critical
+    content: "${marker_name} on printer ${host} is critically low at ${level_percent}% — replace immediately"
+    tags:
+      - critical
+      - printer
+      - consumable
+
+  - metric: consumables
+    field: level_percent
+    preset: true
+    expr: "level_percent < 20"
+    for: 1m
+    severity: warning
+    content: "${marker_name} on printer ${host} is low at ${level_percent}% — order replacement"
+    tags:
+      - warning
+      - printer
+      - consumable
+
+  - metric: paper_trays
+    field: tray_current_level
+    preset: true
+    expr: "tray_current_level < 20"
+    for: 1m
+    severity: warning
+    content: "Paper tray ${tray_name} on printer ${host} is low — ${tray_current_level} sheets remaining"
+
+  - metric: printer_info
+    field: printer_status
+    preset: true
+    expr: "printer_status == 5"
+    for: 2m
+    severity: critical
+    content: "Printer ${host} is in ERROR state — check device"

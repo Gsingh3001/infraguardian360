@@ -1,0 +1,204 @@
+# ===========================================================
+#  InfraGuardian360 — HertzBeat Monitor Template
+#  Device: Ubiquiti UniFi Access Point (UAP, UAP-AC, U6 series)
+#  Protocol: SNMP v1/v2c
+#  Vendor OID: .1.3.6.1.4.1.41112 (Ubiquiti)
+# ===========================================================
+
+category: network
+app: ubiquiti_unifi_ap
+name:
+  zh-CN: Ubiquiti UniFi 无线AP
+  en-US: Ubiquiti UniFi Access Point
+
+params:
+  - field: host
+    name:
+      en-US: Host Address
+    type: host
+    required: true
+  - field: port
+    name:
+      en-US: SNMP Port
+    type: number
+    defaultValue: 161
+    required: true
+  - field: snmpVersion
+    name:
+      en-US: SNMP Version
+    type: radio
+    required: true
+    options:
+      - label: "v1"
+        value: 1
+      - label: "v2c"
+        value: 2
+    defaultValue: 2
+  - field: community
+    name:
+      en-US: SNMP Community
+    type: text
+    defaultValue: public
+
+metrics:
+
+  - name: ap_info
+    priority: 0
+    fields:
+      - field: ap_name
+        type: 1
+        label: true
+      - field: model
+        type: 1
+      - field: firmware_version
+        type: 1
+      - field: uptime_seconds
+        type: 0
+        unit: s
+      - field: total_clients
+        type: 0
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      timeout: 10000
+      oids:
+        ap_name:          1.3.6.1.2.1.1.5.0
+        model:            1.3.6.1.4.1.41112.1.6.1.3.0
+        firmware_version: 1.3.6.1.4.1.41112.1.6.1.4.0
+        uptime_seconds:   1.3.6.1.2.1.1.3.0
+        total_clients:    1.3.6.1.4.1.41112.1.6.1.1.0
+
+  - name: radio_24ghz
+    priority: 1
+    fields:
+      - field: channel
+        type: 0
+      - field: tx_power_dbm
+        type: 0
+        unit: dBm
+      - field: channel_utilisation_percent
+        type: 0
+        unit: '%'
+      - field: clients_connected
+        type: 0
+      - field: tx_bytes
+        type: 0
+        unit: bytes
+      - field: rx_bytes
+        type: 0
+        unit: bytes
+      - field: tx_retries
+        type: 0
+      - field: noise_floor_dbm
+        type: 0
+        unit: dBm
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      timeout: 10000
+      oids:
+        channel:                    1.3.6.1.4.1.41112.1.6.3.1.4.1
+        tx_power_dbm:               1.3.6.1.4.1.41112.1.6.3.1.5.1
+        channel_utilisation_percent: 1.3.6.1.4.1.41112.1.6.3.1.7.1
+        clients_connected:          1.3.6.1.4.1.41112.1.6.3.1.8.1
+        tx_bytes:                   1.3.6.1.4.1.41112.1.6.3.1.11.1
+        rx_bytes:                   1.3.6.1.4.1.41112.1.6.3.1.12.1
+        tx_retries:                 1.3.6.1.4.1.41112.1.6.3.1.14.1
+        noise_floor_dbm:            1.3.6.1.4.1.41112.1.6.3.1.6.1
+
+  - name: radio_5ghz
+    priority: 2
+    fields:
+      - field: channel
+        type: 0
+      - field: tx_power_dbm
+        type: 0
+        unit: dBm
+      - field: channel_utilisation_percent
+        type: 0
+        unit: '%'
+      - field: clients_connected
+        type: 0
+      - field: tx_bytes
+        type: 0
+        unit: bytes
+      - field: rx_bytes
+        type: 0
+        unit: bytes
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      timeout: 10000
+      oids:
+        channel:                    1.3.6.1.4.1.41112.1.6.3.1.4.2
+        tx_power_dbm:               1.3.6.1.4.1.41112.1.6.3.1.5.2
+        channel_utilisation_percent: 1.3.6.1.4.1.41112.1.6.3.1.7.2
+        clients_connected:          1.3.6.1.4.1.41112.1.6.3.1.8.2
+        tx_bytes:                   1.3.6.1.4.1.41112.1.6.3.1.11.2
+        rx_bytes:                   1.3.6.1.4.1.41112.1.6.3.1.12.2
+
+  - name: connected_clients
+    priority: 3
+    fields:
+      - field: client_mac
+        type: 1
+        label: true
+      - field: client_signal_dbm
+        type: 0
+        unit: dBm
+      - field: client_tx_rate_mbps
+        type: 0
+        unit: Mbps
+      - field: client_rx_rate_mbps
+        type: 0
+        unit: Mbps
+      - field: client_uptime_seconds
+        type: 0
+        unit: s
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      timeout: 10000
+      oids:
+        client_mac:            1.3.6.1.4.1.41112.1.6.4.1.1
+        client_signal_dbm:     1.3.6.1.4.1.41112.1.6.4.1.2
+        client_tx_rate_mbps:   1.3.6.1.4.1.41112.1.6.4.1.3
+        client_rx_rate_mbps:   1.3.6.1.4.1.41112.1.6.4.1.4
+        client_uptime_seconds: 1.3.6.1.4.1.41112.1.6.4.1.9
+
+alerts:
+  - metric: radio_24ghz
+    field: channel_utilisation_percent
+    preset: true
+    expr: "channel_utilisation_percent > 80"
+    for: 10m
+    severity: warning
+    content: "UniFi AP ${host} 2.4GHz channel utilisation is ${channel_utilisation_percent}% — consider channel change"
+
+  - metric: radio_5ghz
+    field: channel_utilisation_percent
+    preset: true
+    expr: "channel_utilisation_percent > 80"
+    for: 10m
+    severity: warning
+    content: "UniFi AP ${host} 5GHz channel utilisation is ${channel_utilisation_percent}%"
+
+  - metric: ap_info
+    field: total_clients
+    preset: true
+    expr: "total_clients > 50"
+    for: 5m
+    severity: warning
+    content: "UniFi AP ${host} has ${total_clients} clients — high load"

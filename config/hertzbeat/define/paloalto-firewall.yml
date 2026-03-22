@@ -1,0 +1,299 @@
+# ===========================================================
+#  InfraGuardian360 — HertzBeat Monitor Template
+#  Device: Palo Alto Networks NGFW (PA-Series, VM-Series)
+#  Protocol: SNMP v2c/v3
+#  Vendor OID: .1.3.6.1.4.1.25461 (Palo Alto Networks)
+# ===========================================================
+
+category: network
+app: paloalto_firewall
+name:
+  zh-CN: Palo Alto 下一代防火墙
+  en-US: Palo Alto Networks Firewall
+
+params:
+  - field: host
+    name:
+      en-US: Host Address
+    type: host
+    required: true
+  - field: port
+    name:
+      en-US: SNMP Port
+    type: number
+    defaultValue: 161
+    required: true
+  - field: snmpVersion
+    name:
+      en-US: SNMP Version
+    type: radio
+    required: true
+    options:
+      - label: "v2c"
+        value: 2
+      - label: "v3"
+        value: 3
+    defaultValue: 2
+  - field: community
+    name:
+      en-US: SNMP Community
+    type: text
+    defaultValue: public
+  - field: snmpUsername
+    name:
+      en-US: SNMP v3 Username
+    type: text
+    required: false
+    hide: true
+  - field: snmpAuthPassword
+    name:
+      en-US: Auth Password
+    type: password
+    required: false
+    hide: true
+  - field: snmpPrivPassword
+    name:
+      en-US: Priv Password
+    type: password
+    required: false
+    hide: true
+
+metrics:
+
+  - name: device_info
+    priority: 0
+    fields:
+      - field: hostname
+        type: 1
+        label: true
+      - field: model
+        type: 1
+      - field: pan_os_version
+        type: 1
+      - field: serial_number
+        type: 1
+      - field: uptime_seconds
+        type: 0
+        unit: s
+      - field: ha_state
+        type: 1
+      - field: ha_peer_state
+        type: 1
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        hostname:       1.3.6.1.2.1.1.5.0
+        model:          1.3.6.1.4.1.25461.2.1.2.1.1.0
+        pan_os_version: 1.3.6.1.4.1.25461.2.1.2.1.2.0
+        serial_number:  1.3.6.1.4.1.25461.2.1.2.1.3.0
+        uptime_seconds: 1.3.6.1.2.1.1.3.0
+        ha_state:       1.3.6.1.4.1.25461.2.1.2.1.13.0
+        ha_peer_state:  1.3.6.1.4.1.25461.2.1.2.1.14.0
+
+  - name: cpu_memory
+    priority: 1
+    fields:
+      - field: mgmt_cpu_percent
+        type: 0
+        unit: '%'
+      - field: dataplane_cpu_percent
+        type: 0
+        unit: '%'
+      - field: mgmt_memory_percent
+        type: 0
+        unit: '%'
+      - field: dataplane_memory_percent
+        type: 0
+        unit: '%'
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        mgmt_cpu_percent:        1.3.6.1.4.1.25461.2.1.2.3.1.0
+        dataplane_cpu_percent:   1.3.6.1.4.1.25461.2.1.2.3.2.0
+        mgmt_memory_percent:     1.3.6.1.4.1.25461.2.1.2.3.3.0
+        dataplane_memory_percent: 1.3.6.1.4.1.25461.2.1.2.3.4.0
+
+  - name: sessions
+    priority: 2
+    fields:
+      - field: active_sessions
+        type: 0
+      - field: max_sessions
+        type: 0
+      - field: session_utilisation_percent
+        type: 0
+        unit: '%'
+      - field: tcp_sessions
+        type: 0
+      - field: udp_sessions
+        type: 0
+      - field: icmp_sessions
+        type: 0
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        active_sessions:              1.3.6.1.4.1.25461.2.1.2.3.5.0
+        max_sessions:                 1.3.6.1.4.1.25461.2.1.2.3.6.0
+        session_utilisation_percent:  1.3.6.1.4.1.25461.2.1.2.3.7.0
+        tcp_sessions:                 1.3.6.1.4.1.25461.2.1.2.3.8.0
+        udp_sessions:                 1.3.6.1.4.1.25461.2.1.2.3.9.0
+        icmp_sessions:                1.3.6.1.4.1.25461.2.1.2.3.10.0
+
+  - name: vpn_tunnels
+    priority: 3
+    fields:
+      - field: tunnel_name
+        type: 1
+        label: true
+      - field: tunnel_state
+        type: 1
+      - field: tunnel_protocol
+        type: 1
+      - field: bytes_in
+        type: 0
+        unit: bytes
+      - field: bytes_out
+        type: 0
+        unit: bytes
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        tunnel_name:     1.3.6.1.4.1.25461.2.1.2.5.1.1.1
+        tunnel_state:    1.3.6.1.4.1.25461.2.1.2.5.1.1.4
+        tunnel_protocol: 1.3.6.1.4.1.25461.2.1.2.5.1.1.2
+        bytes_in:        1.3.6.1.4.1.25461.2.1.2.5.1.1.6
+        bytes_out:       1.3.6.1.4.1.25461.2.1.2.5.1.1.7
+
+  - name: threat_stats
+    priority: 4
+    fields:
+      - field: threats_total
+        type: 0
+      - field: threats_critical
+        type: 0
+      - field: threats_high
+        type: 0
+      - field: threats_medium
+        type: 0
+      - field: url_filtering_blocks
+        type: 0
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        threats_total:         1.3.6.1.4.1.25461.2.1.2.3.16.0
+        threats_critical:      1.3.6.1.4.1.25461.2.1.2.3.17.0
+        threats_high:          1.3.6.1.4.1.25461.2.1.2.3.18.0
+        threats_medium:        1.3.6.1.4.1.25461.2.1.2.3.19.0
+        url_filtering_blocks:  1.3.6.1.4.1.25461.2.1.2.3.20.0
+
+  - name: interface_traffic
+    priority: 5
+    fields:
+      - field: interface_name
+        type: 1
+        label: true
+      - field: admin_status
+        type: 1
+      - field: oper_status
+        type: 1
+      - field: in_octets
+        type: 0
+        unit: bytes
+      - field: out_octets
+        type: 0
+        unit: bytes
+      - field: in_errors
+        type: 0
+      - field: out_errors
+        type: 0
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        interface_name: 1.3.6.1.2.1.31.1.1.1.1
+        admin_status:   1.3.6.1.2.1.2.2.1.7
+        oper_status:    1.3.6.1.2.1.2.2.1.8
+        in_octets:      1.3.6.1.2.1.31.1.1.1.6
+        out_octets:     1.3.6.1.2.1.31.1.1.1.10
+        in_errors:      1.3.6.1.2.1.2.2.1.14
+        out_errors:     1.3.6.1.2.1.2.2.1.20
+
+alerts:
+  - metric: cpu_memory
+    field: dataplane_cpu_percent
+    preset: true
+    expr: "dataplane_cpu_percent > 85"
+    for: 5m
+    severity: critical
+    content: "PaloAlto ${host} dataplane CPU at ${dataplane_cpu_percent}% — investigate immediately"
+
+  - metric: sessions
+    field: session_utilisation_percent
+    preset: true
+    expr: "session_utilisation_percent > 80"
+    for: 5m
+    severity: warning
+    content: "PaloAlto ${host} session table at ${session_utilisation_percent}% capacity"
+
+  - metric: vpn_tunnels
+    field: tunnel_state
+    preset: true
+    expr: "tunnel_state == 2"
+    for: 2m
+    severity: critical
+    content: "VPN tunnel ${tunnel_name} on PaloAlto ${host} is DOWN"
+
+  - metric: device_info
+    field: ha_state
+    preset: true
+    expr: "ha_state != 'active' && ha_state != 'passive'"
+    for: 2m
+    severity: critical
+    content: "PaloAlto ${host} HA state is ${ha_state} — check HA pair"

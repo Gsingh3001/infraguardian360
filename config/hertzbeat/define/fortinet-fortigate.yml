@@ -1,0 +1,245 @@
+# ===========================================================
+#  InfraGuardian360 — HertzBeat Monitor Template
+#  Device: Fortinet FortiGate Firewall (all models)
+#  Protocol: SNMP v2c/v3
+#  Vendor OID: .1.3.6.1.4.1.12356 (Fortinet)
+# ===========================================================
+
+category: network
+app: fortinet_fortigate
+name:
+  zh-CN: Fortinet FortiGate 防火墙
+  en-US: Fortinet FortiGate Firewall
+
+params:
+  - field: host
+    name:
+      en-US: Host Address
+    type: host
+    required: true
+  - field: port
+    name:
+      en-US: SNMP Port
+    type: number
+    defaultValue: 161
+    required: true
+  - field: snmpVersion
+    name:
+      en-US: SNMP Version
+    type: radio
+    required: true
+    options:
+      - label: "v2c"
+        value: 2
+      - label: "v3"
+        value: 3
+    defaultValue: 2
+  - field: community
+    name:
+      en-US: SNMP Community
+    type: text
+    defaultValue: public
+  - field: snmpUsername
+    name:
+      en-US: SNMP v3 Username
+    type: text
+    required: false
+    hide: true
+  - field: snmpAuthPassword
+    name:
+      en-US: Auth Password
+    type: password
+    required: false
+    hide: true
+  - field: snmpPrivPassword
+    name:
+      en-US: Priv Password
+    type: password
+    required: false
+    hide: true
+
+metrics:
+
+  - name: device_info
+    priority: 0
+    fields:
+      - field: hostname
+        type: 1
+        label: true
+      - field: model
+        type: 1
+      - field: firmware_version
+        type: 1
+      - field: serial_number
+        type: 1
+      - field: uptime_seconds
+        type: 0
+        unit: s
+      - field: ha_mode
+        type: 1
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        hostname:         1.3.6.1.2.1.1.5.0
+        model:            1.3.6.1.4.1.12356.101.4.1.1.0
+        firmware_version: 1.3.6.1.4.1.12356.101.4.1.2.0
+        serial_number:    1.3.6.1.4.1.12356.101.4.1.3.0
+        uptime_seconds:   1.3.6.1.2.1.1.3.0
+        ha_mode:          1.3.6.1.4.1.12356.101.13.1.1.0
+
+  - name: cpu_memory
+    priority: 1
+    fields:
+      - field: cpu_usage_percent
+        type: 0
+        unit: '%'
+      - field: memory_usage_percent
+        type: 0
+        unit: '%'
+      - field: disk_usage_percent
+        type: 0
+        unit: '%'
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        cpu_usage_percent:    1.3.6.1.4.1.12356.101.4.1.3.0
+        memory_usage_percent: 1.3.6.1.4.1.12356.101.4.1.4.0
+        disk_usage_percent:   1.3.6.1.4.1.12356.101.4.1.6.0
+
+  - name: vpn_tunnels
+    priority: 2
+    fields:
+      - field: tunnel_name
+        type: 1
+        label: true
+      - field: tunnel_status
+        type: 1
+      - field: tunnel_type
+        type: 1
+      - field: in_octets
+        type: 0
+        unit: bytes
+      - field: out_octets
+        type: 0
+        unit: bytes
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        tunnel_name:   1.3.6.1.4.1.12356.101.12.2.2.1.3
+        tunnel_status: 1.3.6.1.4.1.12356.101.12.2.2.1.20
+        tunnel_type:   1.3.6.1.4.1.12356.101.12.2.2.1.2
+        in_octets:     1.3.6.1.4.1.12356.101.12.2.2.1.22
+        out_octets:    1.3.6.1.4.1.12356.101.12.2.2.1.23
+
+  - name: firewall_sessions
+    priority: 3
+    fields:
+      - field: active_sessions
+        type: 0
+      - field: session_rate
+        type: 0
+        unit: sessions/s
+      - field: max_sessions
+        type: 0
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        active_sessions: 1.3.6.1.4.1.12356.101.4.1.8.0
+        session_rate:    1.3.6.1.4.1.12356.101.4.1.11.0
+        max_sessions:    1.3.6.1.4.1.12356.101.4.1.9.0
+
+  - name: interface_traffic
+    priority: 4
+    fields:
+      - field: interface_name
+        type: 1
+        label: true
+      - field: admin_status
+        type: 1
+      - field: oper_status
+        type: 1
+      - field: in_octets
+        type: 0
+        unit: bytes
+      - field: out_octets
+        type: 0
+        unit: bytes
+      - field: in_errors
+        type: 0
+      - field: out_errors
+        type: 0
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        interface_name: 1.3.6.1.2.1.31.1.1.1.1
+        admin_status:   1.3.6.1.2.1.2.2.1.7
+        oper_status:    1.3.6.1.2.1.2.2.1.8
+        in_octets:      1.3.6.1.2.1.31.1.1.1.6
+        out_octets:     1.3.6.1.2.1.31.1.1.1.10
+        in_errors:      1.3.6.1.2.1.2.2.1.14
+        out_errors:     1.3.6.1.2.1.2.2.1.20
+
+alerts:
+  - metric: cpu_memory
+    field: cpu_usage_percent
+    preset: true
+    expr: "cpu_usage_percent > 90"
+    for: 5m
+    severity: critical
+    content: "FortiGate ${host} CPU at ${cpu_usage_percent}% — critical"
+
+  - metric: cpu_memory
+    field: memory_usage_percent
+    preset: true
+    expr: "memory_usage_percent > 85"
+    for: 5m
+    severity: warning
+    content: "FortiGate ${host} memory at ${memory_usage_percent}%"
+
+  - metric: vpn_tunnels
+    field: tunnel_status
+    preset: true
+    expr: "tunnel_status == 1"
+    for: 2m
+    severity: critical
+    content: "VPN tunnel ${tunnel_name} on FortiGate ${host} is DOWN"

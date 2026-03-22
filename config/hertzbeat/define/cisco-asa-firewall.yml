@@ -1,0 +1,245 @@
+# ===========================================================
+#  InfraGuardian360 — HertzBeat Monitor Template
+#  Device: Cisco ASA Firewall (5505, 5506, 5508, 5516, 5525+)
+#  Protocol: SNMP v2c/v3
+#  Vendor OID: .1.3.6.1.4.1.9.9.147 (Cisco FIREWALL-MIB)
+# ===========================================================
+
+category: network
+app: cisco_asa_firewall
+name:
+  zh-CN: Cisco ASA 防火墙
+  en-US: Cisco ASA Firewall
+
+params:
+  - field: host
+    name:
+      en-US: Host Address
+    type: host
+    required: true
+  - field: port
+    name:
+      en-US: SNMP Port
+    type: number
+    defaultValue: 161
+    required: true
+  - field: snmpVersion
+    name:
+      en-US: SNMP Version
+    type: radio
+    required: true
+    options:
+      - label: "v2c"
+        value: 2
+      - label: "v3"
+        value: 3
+    defaultValue: 2
+  - field: community
+    name:
+      en-US: SNMP Community
+    type: text
+    defaultValue: public
+  - field: snmpUsername
+    name:
+      en-US: SNMP v3 Username
+    type: text
+    required: false
+    hide: true
+  - field: snmpAuthPassword
+    name:
+      en-US: Auth Password
+    type: password
+    required: false
+    hide: true
+  - field: snmpPrivPassword
+    name:
+      en-US: Priv Password
+    type: password
+    required: false
+    hide: true
+
+metrics:
+
+  - name: device_info
+    priority: 0
+    fields:
+      - field: hostname
+        type: 1
+        label: true
+      - field: description
+        type: 1
+      - field: asa_version
+        type: 1
+      - field: uptime_seconds
+        type: 0
+        unit: s
+      - field: failover_state
+        type: 1
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        hostname:       1.3.6.1.2.1.1.5.0
+        description:    1.3.6.1.2.1.1.1.0
+        uptime_seconds: 1.3.6.1.2.1.1.3.0
+        failover_state: 1.3.6.1.4.1.9.9.147.1.2.1.1.1.3.6
+
+  - name: connections
+    priority: 1
+    fields:
+      - field: active_connections
+        type: 0
+      - field: max_connections
+        type: 0
+      - field: connection_rate
+        type: 0
+        unit: conn/s
+      - field: half_open_connections
+        type: 0
+      - field: embryonic_connections
+        type: 0
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        active_connections:    1.3.6.1.4.1.9.9.147.1.2.2.2.1.5.40.6
+        max_connections:       1.3.6.1.4.1.9.9.147.1.2.2.2.1.5.40.7
+        connection_rate:       1.3.6.1.4.1.9.9.147.1.2.2.2.1.5.40.8
+        half_open_connections: 1.3.6.1.4.1.9.9.147.1.2.2.2.1.5.40.9
+        embryonic_connections: 1.3.6.1.4.1.9.9.147.1.2.2.2.1.5.40.10
+
+  - name: cpu_memory
+    priority: 2
+    fields:
+      - field: cpu_usage_5sec
+        type: 0
+        unit: '%'
+      - field: cpu_usage_1min
+        type: 0
+        unit: '%'
+      - field: cpu_usage_5min
+        type: 0
+        unit: '%'
+      - field: memory_used_bytes
+        type: 0
+        unit: bytes
+      - field: memory_free_bytes
+        type: 0
+        unit: bytes
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        cpu_usage_5sec:    1.3.6.1.4.1.9.2.1.56.0
+        cpu_usage_1min:    1.3.6.1.4.1.9.2.1.57.0
+        cpu_usage_5min:    1.3.6.1.4.1.9.2.1.58.0
+        memory_used_bytes: 1.3.6.1.4.1.9.9.48.1.1.1.5.1
+        memory_free_bytes: 1.3.6.1.4.1.9.9.48.1.1.1.6.1
+
+  - name: vpn_sessions
+    priority: 3
+    fields:
+      - field: total_vpn_sessions
+        type: 0
+      - field: ipsec_sessions
+        type: 0
+      - field: ssl_vpn_sessions
+        type: 0
+      - field: anyconnect_sessions
+        type: 0
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        total_vpn_sessions:   1.3.6.1.4.1.9.9.392.1.3.1.0
+        ipsec_sessions:       1.3.6.1.4.1.9.9.392.1.3.3.0
+        ssl_vpn_sessions:     1.3.6.1.4.1.9.9.392.1.3.5.0
+        anyconnect_sessions:  1.3.6.1.4.1.9.9.392.1.3.7.0
+
+  - name: interface_traffic
+    priority: 4
+    fields:
+      - field: interface_name
+        type: 1
+        label: true
+      - field: security_level
+        type: 0
+      - field: admin_status
+        type: 1
+      - field: oper_status
+        type: 1
+      - field: in_octets
+        type: 0
+        unit: bytes
+      - field: out_octets
+        type: 0
+        unit: bytes
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        interface_name:  1.3.6.1.2.1.31.1.1.1.1
+        admin_status:    1.3.6.1.2.1.2.2.1.7
+        oper_status:     1.3.6.1.2.1.2.2.1.8
+        in_octets:       1.3.6.1.2.1.31.1.1.1.6
+        out_octets:      1.3.6.1.2.1.31.1.1.1.10
+
+alerts:
+  - metric: cpu_memory
+    field: cpu_usage_5min
+    preset: true
+    expr: "cpu_usage_5min > 85"
+    for: 5m
+    severity: critical
+    content: "Cisco ASA ${host} CPU at ${cpu_usage_5min}% for 5 minutes"
+
+  - metric: connections
+    field: active_connections
+    preset: true
+    expr: "active_connections > (max_connections * 0.85)"
+    for: 5m
+    severity: warning
+    content: "Cisco ASA ${host} connection table at ${active_connections} — approaching limit"
+
+  - metric: device_info
+    field: failover_state
+    preset: true
+    expr: "failover_state != 'active' && failover_state != 'standby'"
+    for: 2m
+    severity: critical
+    content: "Cisco ASA ${host} failover state is ${failover_state} — check HA"

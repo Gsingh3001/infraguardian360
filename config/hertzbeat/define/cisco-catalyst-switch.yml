@@ -1,0 +1,298 @@
+# ===========================================================
+#  InfraGuardian360 — HertzBeat Monitor Template
+#  Device: Cisco Catalyst Switch (2960, 3650, 3850, 9200, 9300)
+#  Protocol: SNMP v2c/v3
+#  Vendor OID: .1.3.6.1.4.1.9 (Cisco)
+# ===========================================================
+
+category: network
+app: cisco_catalyst_switch
+name:
+  zh-CN: Cisco Catalyst 交换机
+  en-US: Cisco Catalyst Switch
+
+# ── CONNECTION PARAMETERS ─────────────────────────────────
+params:
+  - field: host
+    name:
+      zh-CN: 主机地址
+      en-US: Host Address
+    type: host
+    required: true
+
+  - field: port
+    name:
+      zh-CN: 端口
+      en-US: Port
+    type: number
+    range: "[1,65535]"
+    defaultValue: 161
+    required: true
+
+  - field: snmpVersion
+    name:
+      zh-CN: SNMP版本
+      en-US: SNMP Version
+    type: radio
+    required: true
+    options:
+      - label: "v2c"
+        value: 2
+      - label: "v3"
+        value: 3
+    defaultValue: 2
+
+  - field: community
+    name:
+      zh-CN: SNMP团体名
+      en-US: SNMP Community
+    type: text
+    required: false
+    defaultValue: public
+    hide: false
+
+  - field: snmpUsername
+    name:
+      zh-CN: SNMP v3用户名
+      en-US: SNMP v3 Username
+    type: text
+    required: false
+    hide: true
+
+  - field: snmpAuthPassword
+    name:
+      zh-CN: 认证密码
+      en-US: Auth Password
+    type: password
+    required: false
+    hide: true
+
+  - field: snmpPrivPassword
+    name:
+      zh-CN: 加密密码
+      en-US: Priv Password
+    type: password
+    required: false
+    hide: true
+
+# ── METRICS DEFINITION ────────────────────────────────────
+metrics:
+
+  # ── Device Identity ──────────────────────────────────────
+  - name: device_info
+    priority: 0
+    fields:
+      - field: hostname
+        type: 1
+        label: true
+      - field: description
+        type: 1
+      - field: location
+        type: 1
+      - field: contact
+        type: 1
+      - field: uptime_seconds
+        type: 0
+        unit: s
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        hostname:    1.3.6.1.2.1.1.5.0
+        description: 1.3.6.1.2.1.1.1.0
+        location:    1.3.6.1.2.1.1.6.0
+        contact:     1.3.6.1.2.1.1.4.0
+        uptime_seconds: 1.3.6.1.2.1.1.3.0
+
+  # ── CPU & Memory ─────────────────────────────────────────
+  - name: cpu_memory
+    priority: 1
+    fields:
+      - field: cpu_usage_5min
+        type: 0
+        unit: '%'
+      - field: cpu_usage_1min
+        type: 0
+        unit: '%'
+      - field: memory_used_percent
+        type: 0
+        unit: '%'
+      - field: memory_used_bytes
+        type: 0
+        unit: bytes
+      - field: memory_free_bytes
+        type: 0
+        unit: bytes
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        cpu_usage_5min:    1.3.6.1.4.1.9.2.1.58.0
+        cpu_usage_1min:    1.3.6.1.4.1.9.2.1.57.0
+        memory_used_bytes: 1.3.6.1.4.1.9.9.48.1.1.1.5.1
+        memory_free_bytes: 1.3.6.1.4.1.9.9.48.1.1.1.6.1
+
+  # ── Interface Traffic (per port) ─────────────────────────
+  - name: interface_traffic
+    priority: 2
+    fields:
+      - field: port_name
+        type: 1
+        label: true
+      - field: port_description
+        type: 1
+      - field: admin_status
+        type: 1
+      - field: oper_status
+        type: 1
+      - field: in_octets
+        type: 0
+        unit: bytes
+      - field: out_octets
+        type: 0
+        unit: bytes
+      - field: in_errors
+        type: 0
+      - field: out_errors
+        type: 0
+      - field: in_discards
+        type: 0
+      - field: out_discards
+        type: 0
+      - field: speed_bps
+        type: 0
+        unit: bps
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        port_name:    1.3.6.1.2.1.31.1.1.1.1
+        port_description: 1.3.6.1.2.1.31.1.1.1.18
+        admin_status: 1.3.6.1.2.1.2.2.1.7
+        oper_status:  1.3.6.1.2.1.2.2.1.8
+        in_octets:    1.3.6.1.2.1.31.1.1.1.6
+        out_octets:   1.3.6.1.2.1.31.1.1.1.10
+        in_errors:    1.3.6.1.2.1.2.2.1.14
+        out_errors:   1.3.6.1.2.1.2.2.1.20
+        in_discards:  1.3.6.1.2.1.2.2.1.13
+        out_discards: 1.3.6.1.2.1.2.2.1.19
+        speed_bps:    1.3.6.1.2.1.31.1.1.1.15
+
+  # ── PoE Power per Port ────────────────────────────────────
+  - name: poe_power
+    priority: 3
+    fields:
+      - field: port_index
+        type: 1
+        label: true
+      - field: poe_admin_status
+        type: 1
+      - field: poe_oper_status
+        type: 1
+      - field: poe_power_mw
+        type: 0
+        unit: mW
+      - field: poe_max_power_mw
+        type: 0
+        unit: mW
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        poe_admin_status: 1.3.6.1.2.1.105.1.1.1.3
+        poe_oper_status:  1.3.6.1.2.1.105.1.1.1.6
+        poe_power_mw:     1.3.6.1.2.1.105.1.1.1.8
+        poe_max_power_mw: 1.3.6.1.2.1.105.1.1.1.4
+
+  # ── Environment (Temperature / Fan / PSU) ────────────────
+  - name: environment
+    priority: 4
+    fields:
+      - field: sensor_description
+        type: 1
+        label: true
+      - field: sensor_value
+        type: 0
+      - field: sensor_type
+        type: 1
+      - field: sensor_status
+        type: 1
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        sensor_description: 1.3.6.1.4.1.9.9.13.1.3.1.2
+        sensor_value:       1.3.6.1.4.1.9.9.13.1.3.1.3
+        sensor_type:        1.3.6.1.4.1.9.9.13.1.3.1.4
+        sensor_status:      1.3.6.1.4.1.9.9.13.1.3.1.6
+
+# ── ALERT RULES ───────────────────────────────────────────
+alerts:
+  - metric: cpu_memory
+    field: cpu_usage_5min
+    preset: true
+    expr: "cpu_usage_5min > 90"
+    for: 5m
+    severity: critical
+    content: "Cisco Switch ${host} CPU usage is ${cpu_usage_5min}% — exceeds 90% threshold"
+    tags:
+      - critical
+      - network
+
+  - metric: cpu_memory
+    field: cpu_usage_5min
+    preset: true
+    expr: "cpu_usage_5min > 75"
+    for: 10m
+    severity: warning
+    content: "Cisco Switch ${host} CPU usage is ${cpu_usage_5min}%"
+    tags:
+      - warning
+      - network
+
+  - metric: interface_traffic
+    field: oper_status
+    preset: true
+    expr: "oper_status == 2 && admin_status == 1"
+    for: 2m
+    severity: critical
+    content: "Port ${port_name} on ${host} is DOWN (admin UP)"
+    tags:
+      - critical
+      - network
+      - port-down
