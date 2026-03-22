@@ -1,0 +1,31 @@
+# ============================================================
+#  SigNoz — Prometheus scrape config
+#  Metrics scraped here appear in SigNoz dashboards
+# ============================================================
+
+global:
+  scrape_interval: 60s
+  evaluation_interval: 60s
+  external_labels:
+    monitor: infraguardian360-apm
+    environment: production
+
+scrape_configs:
+
+  - job_name: signoz-collector
+    static_configs:
+      - targets:
+          - signoz-otel-collector:8888
+
+  - job_name: clickhouse
+    static_configs:
+      - targets:
+          - clickhouse:9363
+
+  - job_name: ig360-core
+    static_configs:
+      - targets:
+          - netbox:8080
+          - hertzbeat:1157
+          - prometheus:9090
+          - victoriametrics:8428

@@ -1,0 +1,157 @@
+version: "3.9"
+
+# ============================================================
+#  InfraGuardian360 — APM Stack (Phase 4)
+#  SigNoz + ClickHouse + OpenTelemetry
+#  Full APM, distributed tracing, service maps, DB slow queries
+#  Replaces: New Relic, Dynatrace, Datadog APM
+#  Usage: docker compose -f docker/docker-compose.apm.yml up -d
+#  Requires: docker-compose.core.yml already running
+# ============================================================
+
+services:
+
+  # ── ClickHouse — SigNoz trace + metrics backend ──────────────
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.1.2-alpine
+    container_name: ig360-clickhouse
+    restart: unless-stopped
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    volumes:
+      - ./config/clickhouse/config.xml:/etc/clickhouse-server/config.d/ig360.xml
+      - ./config/clickhouse/users.xml:/etc/clickhouse-server/users.d/ig360.xml
+      - clickhouse-data:/var/lib/clickhouse
+    networks:
+      - ig360
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8123/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    environment:
+      CLICKHOUSE_DB: signoz_traces
+      CLICKHOUSE_USER: signoz
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+
+  # ── Zookeeper — ClickHouse cluster coordination ──────────────
+  zookeeper:
+    image: bitnami/zookeeper:3.7.1
+    container_name: ig360-zookeeper
+    restart: unless-stopped
+    environment:
+      ALLOW_ANONYMOUS_LOGIN: "yes"
+      ZOO_AUTOPURGE_INTERVAL: 1
+    volumes:
+      - zookeeper-data:/bitnami/zookeeper
+    networks:
+      - ig360
+
+  # ── SigNoz Query Service ─────────────────────────────────────
+  signoz-query:
+    image: signoz/query-service:0.43.0
+    container_name: ig360-signoz-query
+    restart: unless-stopped
+    command:
+      - "--config=/root/config/prometheus.yml"
+    environment:
+      ClickHouseUrl: tcp://clickhouse:9000/?database=signoz_traces
+      SIGNOZ_LOCAL_DB_PATH: /var/lib/signoz/
+      DASHBOARDS_PATH: /root/config/dashboards
+      STORAGE: clickhouse
+      GODEBUG: netdns=go
+      TELEMETRY_ENABLED: "false"
+      DEPLOYMENT_TYPE: docker-standalone-amd
+      CLICKHOUSE_USER: signoz
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+    volumes:
+      - ./config/signoz/prometheus.yml:/root/config/prometheus.yml
+      - signoz-db:/var/lib/signoz
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    networks:
+      - ig360
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8085/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  # ── SigNoz Frontend ──────────────────────────────────────────
+  signoz-frontend:
+    image: signoz/frontend:0.43.0
+    container_name: ig360-signoz-frontend
+    restart: unless-stopped
+    depends_on:
+      signoz-query:
+        condition: service_healthy
+    environment:
+      NGINX_CONFIG_ENVSUBST: "true"
+    networks:
+      - ig360
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.signoz.rule=Host(`apm.${DOMAIN}`)"
+      - "traefik.http.routers.signoz.tls.certresolver=le"
+      - "traefik.http.services.signoz.loadbalancer.server.port=3301"
+
+  # ── SigNoz OTel Collector ────────────────────────────────────
+  # Dedicated OTel collector for APM data — receives traces/metrics
+  # from instrumented applications and ships to ClickHouse
+  signoz-otel-collector:
+    image: signoz/signoz-otel-collector:0.102.7
+    container_name: ig360-signoz-otel
+    restart: unless-stopped
+    command:
+      - "--config=/conf/config.yaml"
+    volumes:
+      - ./config/signoz/otel-collector.yaml:/conf/config.yaml
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    environment:
+      OTEL_RESOURCE_ATTRIBUTES: host.name=ig360-apm,os.type=linux
+      CLICKHOUSE_USER: signoz
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+      DOCKER_MULTI_NODE_CLUSTER: "false"
+      LOW_CARDINAL_EXCEPTION_GROUPING: "false"
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    networks:
+      - ig360
+
+  # ── Jaeger — Deep distributed trace UI ──────────────────────
+  jaeger:
+    image: jaegertracing/all-in-one:1.54
+    container_name: ig360-jaeger
+    restart: unless-stopped
+    environment:
+      SPAN_STORAGE_TYPE: grpc-plugin
+      GRPC_STORAGE_SERVER: signoz-query:16685
+      LOG_LEVEL: warn
+    depends_on:
+      signoz-query:
+        condition: service_healthy
+    networks:
+      - ig360
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jaeger.rule=Host(`traces.${DOMAIN}`)"
+      - "traefik.http.routers.jaeger.tls.certresolver=le"
+      - "traefik.http.services.jaeger.loadbalancer.server.port=16686"
+
+networks:
+  ig360:
+    external: true
+
+volumes:
+  clickhouse-data:
+  zookeeper-data:
+  signoz-db:

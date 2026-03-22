@@ -1,0 +1,133 @@
+# ============================================================
+#  SigNoz OpenTelemetry Collector Configuration
+#  Receives traces + metrics from instrumented applications
+#  Ships to ClickHouse via SigNoz exporter
+# ============================================================
+
+receivers:
+
+  # ── OTLP — receives from instrumented apps ─────────────────
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+        cors:
+          allowed_origins:
+            - "*"
+
+  # ── Prometheus — scrapes internal metrics ──────────────────
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: otel-collector
+          static_configs:
+            - targets:
+                - localhost:8888
+
+  # ── Docker stats — container-level metrics ─────────────────
+  docker_stats:
+    endpoint: unix:///var/run/docker.sock
+    collection_interval: 30s
+    timeout: 10s
+    api_version: 1.24
+    container_labels_to_metric_labels:
+      com.docker.compose.service: service_name
+      com.docker.compose.project: project_name
+
+processors:
+
+  # ── Batch for efficiency ────────────────────────────────────
+  batch:
+    send_batch_size: 10000
+    send_batch_max_size: 11000
+    timeout: 10s
+
+  # ── Memory limiter ──────────────────────────────────────────
+  memory_limiter:
+    check_interval: 5s
+    limit_mib: 1500
+    spike_limit_mib: 500
+
+  # ── Resource detection ──────────────────────────────────────
+  resourcedetection:
+    detectors:
+      - env
+      - system
+    timeout: 5s
+    override: false
+
+  # ── Add IG360 attributes to all telemetry ──────────────────
+  resource:
+    attributes:
+      - key: deployment.environment
+        value: production
+        action: upsert
+      - key: service.namespace
+        value: infraguardian360
+        action: upsert
+
+  # ── Filter out noisy health check spans ────────────────────
+  filter/health_checks:
+    error_mode: ignore
+    traces:
+      span:
+        - 'attributes["http.route"] == "/health"'
+        - 'attributes["http.route"] == "/ping"'
+        - 'attributes["http.route"] == "/metrics"'
+
+exporters:
+
+  # ── SigNoz ClickHouse exporter ──────────────────────────────
+  clickhousetraces:
+    datasource: tcp://clickhouse:9000/?database=signoz_traces&username=signoz&password=${CLICKHOUSE_PASSWORD}
+    migrations_path: /migrations
+
+  clickhousemetricswrite:
+    endpoint: tcp://clickhouse:9000/?database=signoz_metrics&username=signoz&password=${CLICKHOUSE_PASSWORD}
+    resource_to_telemetry_conversion:
+      enabled: true
+
+  clickhouselogsexporter:
+    dsn: tcp://clickhouse:9000/?database=signoz_logs&username=signoz&password=${CLICKHOUSE_PASSWORD}
+    timeout: 10s
+
+  # ── Also forward metrics to VictoriaMetrics ─────────────────
+  prometheusremotewrite:
+    endpoint: http://victoria-metrics:8428/api/v1/write
+    tls:
+      insecure: true
+
+  # ── Debug logging ───────────────────────────────────────────
+  debug:
+    verbosity: basic
+    sampling_initial: 5
+    sampling_thereafter: 200
+
+service:
+
+  pipelines:
+
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, resourcedetection, resource, filter/health_checks, batch]
+      exporters: [clickhousetraces]
+
+    metrics:
+      receivers: [otlp, prometheus, docker_stats]
+      processors: [memory_limiter, resourcedetection, resource, batch]
+      exporters: [clickhousemetricswrite, prometheusremotewrite]
+
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, resourcedetection, resource, batch]
+      exporters: [clickhouselogsexporter]
+
+  extensions: []
+
+  telemetry:
+    logs:
+      level: warn
+    metrics:
+      address: 0.0.0.0:8888

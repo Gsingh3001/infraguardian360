@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+<!-- InfraGuardian360 — ClickHouse Configuration -->
+<clickhouse>
+
+  <!-- Storage optimisation for SigNoz traces -->
+  <storage_configuration>
+    <disks>
+      <default>
+        <keep_free_space_bytes>10737418240</keep_free_space_bytes>
+      </default>
+    </disks>
+    <policies>
+      <tiered>
+        <volumes>
+          <hot>
+            <disk>default</disk>
+            <max_data_part_size_bytes>1073741824</max_data_part_size_bytes>
+          </hot>
+        </volumes>
+        <move_factor>0.1</move_factor>
+      </tiered>
+    </policies>
+  </storage_configuration>
+
+  <!-- Memory limits — tuned for 16GB server -->
+  <max_server_memory_usage_to_ram_ratio>0.4</max_server_memory_usage_to_ram_ratio>
+  <max_concurrent_queries>100</max_concurrent_queries>
+  <max_connections>1000</max_connections>
+
+  <!-- Logging -->
+  <logger>
+    <level>warning</level>
+    <console>true</console>
+  </logger>
+
+  <!-- Zookeeper for replication -->
+  <zookeeper>
+    <node>
+      <host>zookeeper</host>
+      <port>2181</port>
+    </node>
+  </zookeeper>
+
+  <!-- OpenTelemetry trace logging -->
+  <opentelemetry_span_log>
+    <engine>
+      ENGINE = MergeTree
+      PARTITION BY toYYYYMM(finish_date)
+      ORDER BY (finish_date, trace_id)
+      TTL finish_date + INTERVAL 30 DAY
+      SETTINGS index_granularity = 8192
+    </engine>
+    <database>system</database>
+    <table>opentelemetry_span_log</table>
+    <flush_interval_milliseconds>7500</flush_interval_milliseconds>
+    <collect_interval_milliseconds>1000</collect_interval_milliseconds>
+  </opentelemetry_span_log>
+
+</clickhouse>
