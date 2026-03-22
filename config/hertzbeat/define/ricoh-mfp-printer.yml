@@ -1,0 +1,303 @@
+# ===========================================================
+#  InfraGuardian360 — HertzBeat Monitor Template
+#  Device: Ricoh / Konica Minolta / Nashuatec MFPs
+#  Covers: Ricoh IM series, MP series, SP series
+#          Konica Minolta bizhub series
+#          Nashuatec / Lanier / Gestetner (all Ricoh OEM)
+#  Protocol: SNMP v1/v2c (PRINTER-MIB + Ricoh vendor MIBs)
+#  Vendor OID: .1.3.6.1.4.1.367 (Ricoh)
+#              .1.3.6.1.4.1.18334 (Konica Minolta)
+# ===========================================================
+
+category: network
+app: ricoh_mfp_printer
+name:
+  zh-CN: 理光/柯尼卡美能达 MFP
+  en-US: Ricoh / Konica Minolta MFP
+
+params:
+  - field: host
+    name:
+      en-US: Host Address
+    type: host
+    required: true
+  - field: port
+    name:
+      en-US: SNMP Port
+    type: number
+    defaultValue: 161
+    required: true
+  - field: snmpVersion
+    name:
+      en-US: SNMP Version
+    type: radio
+    required: true
+    options:
+      - label: "v1"
+        value: 1
+      - label: "v2c"
+        value: 2
+    defaultValue: 1
+  - field: community
+    name:
+      en-US: SNMP Community
+    type: text
+    defaultValue: public
+  - field: vendor
+    name:
+      en-US: Vendor
+    type: radio
+    required: true
+    options:
+      - label: "Ricoh"
+        value: ricoh
+      - label: "Konica Minolta"
+        value: konica
+    defaultValue: ricoh
+
+metrics:
+
+  - name: printer_info
+    priority: 0
+    fields:
+      - field: printer_name
+        type: 1
+        label: true
+      - field: model
+        type: 1
+      - field: serial_number
+        type: 1
+      - field: firmware_version
+        type: 1
+      - field: printer_status
+        type: 1
+      - field: uptime_seconds
+        type: 0
+        unit: s
+      - field: ip_address
+        type: 1
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      timeout: 15000
+      oids:
+        printer_name:     1.3.6.1.2.1.1.5.0
+        model:            1.3.6.1.4.1.367.3.2.1.2.1.4.0
+        serial_number:    1.3.6.1.4.1.367.3.2.1.2.1.7.0
+        firmware_version: 1.3.6.1.4.1.367.3.2.1.2.1.5.0
+        printer_status:   1.3.6.1.2.1.25.3.5.1.1.1
+        uptime_seconds:   1.3.6.1.2.1.1.3.0
+        ip_address:       1.3.6.1.4.1.367.3.2.1.2.1.8.0
+
+  - name: consumables
+    priority: 1
+    fields:
+      - field: marker_name
+        type: 1
+        label: true
+      - field: marker_color
+        type: 1
+      - field: max_capacity
+        type: 0
+      - field: current_level
+        type: 0
+      - field: level_percent
+        type: 0
+        unit: '%'
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      timeout: 15000
+      oids:
+        marker_name:   1.3.6.1.2.1.43.11.1.1.6.1
+        marker_color:  1.3.6.1.2.1.43.12.1.1.4.1
+        max_capacity:  1.3.6.1.2.1.43.11.1.1.8.1
+        current_level: 1.3.6.1.2.1.43.11.1.1.9.1
+
+  - name: ricoh_toner
+    priority: 2
+    fields:
+      - field: black_toner_percent
+        type: 0
+        unit: '%'
+      - field: cyan_toner_percent
+        type: 0
+        unit: '%'
+      - field: magenta_toner_percent
+        type: 0
+        unit: '%'
+      - field: yellow_toner_percent
+        type: 0
+        unit: '%'
+      - field: drum_black_percent
+        type: 0
+        unit: '%'
+      - field: drum_cyan_percent
+        type: 0
+        unit: '%'
+      - field: drum_magenta_percent
+        type: 0
+        unit: '%'
+      - field: drum_yellow_percent
+        type: 0
+        unit: '%'
+      - field: fuser_unit_percent
+        type: 0
+        unit: '%'
+      - field: transfer_belt_percent
+        type: 0
+        unit: '%'
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      timeout: 15000
+      oids:
+        black_toner_percent:    1.3.6.1.4.1.367.3.2.1.2.24.1.1.5.1
+        cyan_toner_percent:     1.3.6.1.4.1.367.3.2.1.2.24.1.1.5.2
+        magenta_toner_percent:  1.3.6.1.4.1.367.3.2.1.2.24.1.1.5.3
+        yellow_toner_percent:   1.3.6.1.4.1.367.3.2.1.2.24.1.1.5.4
+        drum_black_percent:     1.3.6.1.4.1.367.3.2.1.2.24.1.1.5.5
+        drum_cyan_percent:      1.3.6.1.4.1.367.3.2.1.2.24.1.1.5.6
+        drum_magenta_percent:   1.3.6.1.4.1.367.3.2.1.2.24.1.1.5.7
+        drum_yellow_percent:    1.3.6.1.4.1.367.3.2.1.2.24.1.1.5.8
+        fuser_unit_percent:     1.3.6.1.4.1.367.3.2.1.2.24.1.1.5.9
+        transfer_belt_percent:  1.3.6.1.4.1.367.3.2.1.2.24.1.1.5.10
+
+  - name: page_counts
+    priority: 3
+    fields:
+      - field: total_pages
+        type: 0
+      - field: colour_pages
+        type: 0
+      - field: mono_pages
+        type: 0
+      - field: copy_pages
+        type: 0
+      - field: print_pages
+        type: 0
+      - field: scan_pages
+        type: 0
+      - field: fax_pages
+        type: 0
+      - field: duplex_pages
+        type: 0
+      - field: a3_pages
+        type: 0
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      timeout: 15000
+      oids:
+        total_pages:   1.3.6.1.2.1.43.10.2.1.4.1.1
+        colour_pages:  1.3.6.1.4.1.367.3.2.1.2.19.2.0
+        mono_pages:    1.3.6.1.4.1.367.3.2.1.2.19.1.0
+        copy_pages:    1.3.6.1.4.1.367.3.2.1.2.19.3.0
+        print_pages:   1.3.6.1.4.1.367.3.2.1.2.19.4.0
+        scan_pages:    1.3.6.1.4.1.367.3.2.1.2.19.5.0
+        fax_pages:     1.3.6.1.4.1.367.3.2.1.2.19.6.0
+        duplex_pages:  1.3.6.1.4.1.367.3.2.1.2.19.7.0
+        a3_pages:      1.3.6.1.4.1.367.3.2.1.2.19.8.0
+
+  - name: paper_trays
+    priority: 4
+    fields:
+      - field: tray_name
+        type: 1
+        label: true
+      - field: tray_status
+        type: 1
+      - field: tray_media_size
+        type: 1
+      - field: tray_capacity
+        type: 0
+      - field: tray_level
+        type: 0
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      timeout: 15000
+      oids:
+        tray_name:       1.3.6.1.2.1.43.8.2.1.13.1
+        tray_status:     1.3.6.1.2.1.43.8.2.1.11.1
+        tray_media_size: 1.3.6.1.2.1.43.8.2.1.15.1
+        tray_capacity:   1.3.6.1.2.1.43.8.2.1.9.1
+        tray_level:      1.3.6.1.2.1.43.8.2.1.10.1
+
+  - name: device_errors
+    priority: 5
+    fields:
+      - field: error_description
+        type: 1
+        label: true
+      - field: error_severity
+        type: 1
+      - field: error_time
+        type: 1
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      timeout: 15000
+      oids:
+        error_description: 1.3.6.1.2.1.43.18.1.1.7.1
+        error_severity:    1.3.6.1.2.1.43.18.1.1.2.1
+        error_time:        1.3.6.1.2.1.43.18.1.1.5.1
+
+alerts:
+  - metric: ricoh_toner
+    field: black_toner_percent
+    preset: true
+    expr: "black_toner_percent < 10"
+    for: 1m
+    severity: critical
+    content: "Ricoh MFP ${host} black toner critically low at ${black_toner_percent}% — replace immediately"
+
+  - metric: ricoh_toner
+    field: black_toner_percent
+    preset: true
+    expr: "black_toner_percent < 20"
+    for: 1m
+    severity: warning
+    content: "Ricoh MFP ${host} black toner low at ${black_toner_percent}% — order replacement"
+
+  - metric: ricoh_toner
+    field: fuser_unit_percent
+    preset: true
+    expr: "fuser_unit_percent < 10"
+    for: 1m
+    severity: warning
+    content: "Ricoh MFP ${host} fuser unit at ${fuser_unit_percent}% — schedule replacement"
+
+  - metric: ricoh_toner
+    field: transfer_belt_percent
+    preset: true
+    expr: "transfer_belt_percent < 10"
+    for: 1m
+    severity: warning
+    content: "Ricoh MFP ${host} transfer belt at ${transfer_belt_percent}%"
+
+  - metric: printer_info
+    field: printer_status
+    preset: true
+    expr: "printer_status == 5"
+    for: 2m
+    severity: critical
+    content: "Ricoh MFP ${host} is in ERROR state — check device"

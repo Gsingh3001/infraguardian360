@@ -1,0 +1,283 @@
+# ===========================================================
+#  InfraGuardian360 — HertzBeat Monitor Template
+#  Device: Juniper SRX Series Firewall / Router
+#  Covers: SRX300, SRX320, SRX345, SRX550, SRX1500, SRX4100+
+#  Protocol: SNMP v2c/v3
+#  Vendor OID: .1.3.6.1.4.1.2636 (Juniper Networks)
+# ===========================================================
+
+category: network
+app: juniper_srx_firewall
+name:
+  zh-CN: Juniper SRX 防火墙
+  en-US: Juniper SRX Firewall
+
+params:
+  - field: host
+    name:
+      en-US: Host Address
+    type: host
+    required: true
+  - field: port
+    name:
+      en-US: SNMP Port
+    type: number
+    defaultValue: 161
+    required: true
+  - field: snmpVersion
+    name:
+      en-US: SNMP Version
+    type: radio
+    required: true
+    options:
+      - label: "v2c"
+        value: 2
+      - label: "v3"
+        value: 3
+    defaultValue: 2
+  - field: community
+    name:
+      en-US: SNMP Community
+    type: text
+    defaultValue: public
+  - field: snmpUsername
+    name:
+      en-US: SNMP v3 Username
+    type: text
+    required: false
+    hide: true
+  - field: snmpAuthPassword
+    name:
+      en-US: Auth Password
+    type: password
+    required: false
+    hide: true
+  - field: snmpPrivPassword
+    name:
+      en-US: Priv Password
+    type: password
+    required: false
+    hide: true
+
+metrics:
+
+  - name: device_info
+    priority: 0
+    fields:
+      - field: hostname
+        type: 1
+        label: true
+      - field: junos_version
+        type: 1
+      - field: serial_number
+        type: 1
+      - field: model
+        type: 1
+      - field: uptime_seconds
+        type: 0
+        unit: s
+      - field: chassis_alarm
+        type: 1
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        hostname:       1.3.6.1.2.1.1.5.0
+        junos_version:  1.3.6.1.4.1.2636.3.1.13.1.11.9.1.0.0
+        serial_number:  1.3.6.1.4.1.2636.3.1.3.0
+        model:          1.3.6.1.4.1.2636.3.1.2.0
+        uptime_seconds: 1.3.6.1.2.1.1.3.0
+        chassis_alarm:  1.3.6.1.4.1.2636.3.4.2.2.1.0
+
+  - name: cpu_memory
+    priority: 1
+    fields:
+      - field: routing_engine
+        type: 1
+        label: true
+      - field: cpu_usage_percent
+        type: 0
+        unit: '%'
+      - field: memory_used_percent
+        type: 0
+        unit: '%'
+      - field: memory_total_mb
+        type: 0
+        unit: MB
+      - field: temperature_celsius
+        type: 0
+        unit: celsius
+      - field: re_state
+        type: 1
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        routing_engine:      1.3.6.1.4.1.2636.3.1.13.1.5.9.1.0.0
+        cpu_usage_percent:   1.3.6.1.4.1.2636.3.1.13.1.8.9.1.0.0
+        memory_used_percent: 1.3.6.1.4.1.2636.3.1.13.1.11.9.1.0.0
+        memory_total_mb:     1.3.6.1.4.1.2636.3.1.13.1.10.9.1.0.0
+        temperature_celsius: 1.3.6.1.4.1.2636.3.1.13.1.7.9.1.0.0
+        re_state:            1.3.6.1.4.1.2636.3.1.13.1.6.9.1.0.0
+
+  - name: bgp_peers
+    priority: 2
+    fields:
+      - field: peer_address
+        type: 1
+        label: true
+      - field: peer_state
+        type: 1
+      - field: peer_as
+        type: 0
+      - field: prefixes_received
+        type: 0
+      - field: prefixes_active
+        type: 0
+      - field: in_updates
+        type: 0
+      - field: out_updates
+        type: 0
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        peer_state:        1.3.6.1.2.1.15.3.1.2
+        peer_as:           1.3.6.1.2.1.15.3.1.9
+        prefixes_received: 1.3.6.1.2.1.15.3.1.11
+        prefixes_active:   1.3.6.1.4.1.2636.5.1.1.2.1.1.1.10
+        in_updates:        1.3.6.1.2.1.15.3.1.12
+        out_updates:       1.3.6.1.2.1.15.3.1.13
+
+  - name: vpn_tunnels
+    priority: 3
+    fields:
+      - field: tunnel_name
+        type: 1
+        label: true
+      - field: tunnel_state
+        type: 1
+      - field: local_gateway
+        type: 1
+      - field: remote_gateway
+        type: 1
+      - field: bytes_in
+        type: 0
+        unit: bytes
+      - field: bytes_out
+        type: 0
+        unit: bytes
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        tunnel_name:    1.3.6.1.4.1.2636.3.52.1.3.1.3
+        tunnel_state:   1.3.6.1.4.1.2636.3.52.1.3.1.7
+        local_gateway:  1.3.6.1.4.1.2636.3.52.1.3.1.4
+        remote_gateway: 1.3.6.1.4.1.2636.3.52.1.3.1.5
+        bytes_in:       1.3.6.1.4.1.2636.3.52.1.3.1.12
+        bytes_out:      1.3.6.1.4.1.2636.3.52.1.3.1.13
+
+  - name: interface_traffic
+    priority: 4
+    fields:
+      - field: interface_name
+        type: 1
+        label: true
+      - field: admin_status
+        type: 1
+      - field: oper_status
+        type: 1
+      - field: in_octets
+        type: 0
+        unit: bytes
+      - field: out_octets
+        type: 0
+        unit: bytes
+      - field: in_errors
+        type: 0
+      - field: out_errors
+        type: 0
+      - field: speed_mbps
+        type: 0
+        unit: Mbps
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        interface_name: 1.3.6.1.2.1.31.1.1.1.1
+        admin_status:   1.3.6.1.2.1.2.2.1.7
+        oper_status:    1.3.6.1.2.1.2.2.1.8
+        in_octets:      1.3.6.1.2.1.31.1.1.1.6
+        out_octets:     1.3.6.1.2.1.31.1.1.1.10
+        in_errors:      1.3.6.1.2.1.2.2.1.14
+        out_errors:     1.3.6.1.2.1.2.2.1.20
+        speed_mbps:     1.3.6.1.2.1.31.1.1.1.15
+
+alerts:
+  - metric: cpu_memory
+    field: cpu_usage_percent
+    preset: true
+    expr: "cpu_usage_percent > 85"
+    for: 5m
+    severity: critical
+    content: "Juniper SRX ${host} CPU at ${cpu_usage_percent}% — investigate"
+
+  - metric: cpu_memory
+    field: temperature_celsius
+    preset: true
+    expr: "temperature_celsius > 75"
+    for: 5m
+    severity: warning
+    content: "Juniper SRX ${host} temperature ${temperature_celsius}°C — check airflow"
+
+  - metric: bgp_peers
+    field: peer_state
+    preset: true
+    expr: "peer_state != 6"
+    for: 3m
+    severity: critical
+    content: "BGP peer ${peer_address} on ${host} is ${peer_state} — not established"
+
+  - metric: vpn_tunnels
+    field: tunnel_state
+    preset: true
+    expr: "tunnel_state != 'up'"
+    for: 2m
+    severity: critical
+    content: "VPN tunnel ${tunnel_name} on Juniper ${host} is DOWN"

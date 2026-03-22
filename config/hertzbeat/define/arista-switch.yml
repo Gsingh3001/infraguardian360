@@ -1,0 +1,283 @@
+# ===========================================================
+#  InfraGuardian360 — HertzBeat Monitor Template
+#  Device: Arista Networks EOS Switch (7000 series, 7500 series)
+#  Common in: financial services, datacentres, hyperscale
+#  Protocol: SNMP v2c/v3 + eAPI (HTTP)
+#  Vendor OID: .1.3.6.1.4.1.30065 (Arista Networks)
+# ===========================================================
+
+category: network
+app: arista_eos_switch
+name:
+  zh-CN: Arista EOS 交换机
+  en-US: Arista EOS Switch
+
+params:
+  - field: host
+    name:
+      en-US: Host Address
+    type: host
+    required: true
+  - field: port
+    name:
+      en-US: SNMP Port
+    type: number
+    defaultValue: 161
+    required: true
+  - field: snmpVersion
+    name:
+      en-US: SNMP Version
+    type: radio
+    required: true
+    options:
+      - label: "v2c"
+        value: 2
+      - label: "v3"
+        value: 3
+    defaultValue: 2
+  - field: community
+    name:
+      en-US: SNMP Community
+    type: text
+    defaultValue: public
+  - field: snmpUsername
+    name:
+      en-US: SNMP v3 Username
+    type: text
+    required: false
+    hide: true
+  - field: snmpAuthPassword
+    name:
+      en-US: Auth Password
+    type: password
+    required: false
+    hide: true
+  - field: snmpPrivPassword
+    name:
+      en-US: Priv Password
+    type: password
+    required: false
+    hide: true
+  - field: eapiPort
+    name:
+      en-US: eAPI Port (443)
+    type: number
+    defaultValue: 443
+  - field: eapiUsername
+    name:
+      en-US: eAPI Username
+    type: text
+    defaultValue: admin
+  - field: eapiPassword
+    name:
+      en-US: eAPI Password
+    type: password
+
+metrics:
+
+  - name: device_info
+    priority: 0
+    fields:
+      - field: hostname
+        type: 1
+        label: true
+      - field: eos_version
+        type: 1
+      - field: model
+        type: 1
+      - field: serial_number
+        type: 1
+      - field: uptime_seconds
+        type: 0
+        unit: s
+      - field: mlag_state
+        type: 1
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        hostname:       1.3.6.1.2.1.1.5.0
+        eos_version:    1.3.6.1.4.1.30065.3.1.1.1.0
+        model:          1.3.6.1.4.1.30065.3.1.1.2.0
+        serial_number:  1.3.6.1.4.1.30065.3.1.1.3.0
+        uptime_seconds: 1.3.6.1.2.1.1.3.0
+        mlag_state:     1.3.6.1.4.1.30065.3.14.1.2.0
+
+  - name: cpu_memory
+    priority: 1
+    fields:
+      - field: cpu_usage_5sec
+        type: 0
+        unit: '%'
+      - field: cpu_usage_1min
+        type: 0
+        unit: '%'
+      - field: cpu_usage_5min
+        type: 0
+        unit: '%'
+      - field: memory_total_kb
+        type: 0
+        unit: KB
+      - field: memory_free_kb
+        type: 0
+        unit: KB
+      - field: memory_used_percent
+        type: 0
+        unit: '%'
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        cpu_usage_5sec:  1.3.6.1.4.1.2021.11.9.0
+        cpu_usage_1min:  1.3.6.1.4.1.2021.11.10.0
+        cpu_usage_5min:  1.3.6.1.4.1.2021.11.11.0
+        memory_total_kb: 1.3.6.1.4.1.2021.4.5.0
+        memory_free_kb:  1.3.6.1.4.1.2021.4.6.0
+
+  - name: interface_traffic
+    priority: 2
+    fields:
+      - field: interface_name
+        type: 1
+        label: true
+      - field: admin_status
+        type: 1
+      - field: oper_status
+        type: 1
+      - field: in_octets
+        type: 0
+        unit: bytes
+      - field: out_octets
+        type: 0
+        unit: bytes
+      - field: in_errors
+        type: 0
+      - field: out_errors
+        type: 0
+      - field: speed_mbps
+        type: 0
+        unit: Mbps
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        interface_name: 1.3.6.1.2.1.31.1.1.1.1
+        admin_status:   1.3.6.1.2.1.2.2.1.7
+        oper_status:    1.3.6.1.2.1.2.2.1.8
+        in_octets:      1.3.6.1.2.1.31.1.1.1.6
+        out_octets:     1.3.6.1.2.1.31.1.1.1.10
+        in_errors:      1.3.6.1.2.1.2.2.1.14
+        out_errors:     1.3.6.1.2.1.2.2.1.20
+        speed_mbps:     1.3.6.1.2.1.31.1.1.1.15
+
+  - name: bgp_summary
+    priority: 3
+    fields:
+      - field: peer_address
+        type: 1
+        label: true
+      - field: peer_state
+        type: 1
+      - field: peer_as
+        type: 0
+      - field: prefixes_received
+        type: 0
+      - field: uptime_seconds
+        type: 0
+        unit: s
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        peer_state:        1.3.6.1.2.1.15.3.1.2
+        peer_as:           1.3.6.1.2.1.15.3.1.9
+        prefixes_received: 1.3.6.1.2.1.15.3.1.11
+
+  - name: environment
+    priority: 4
+    fields:
+      - field: sensor_name
+        type: 1
+        label: true
+      - field: sensor_type
+        type: 1
+      - field: sensor_value
+        type: 0
+      - field: sensor_status
+        type: 1
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        sensor_name:   1.3.6.1.4.1.30065.3.12.1.1.2
+        sensor_type:   1.3.6.1.4.1.30065.3.12.1.1.3
+        sensor_value:  1.3.6.1.4.1.30065.3.12.1.1.4
+        sensor_status: 1.3.6.1.4.1.30065.3.12.1.1.7
+
+alerts:
+  - metric: cpu_memory
+    field: cpu_usage_5min
+    preset: true
+    expr: "cpu_usage_5min > 85"
+    for: 5m
+    severity: critical
+    content: "Arista Switch ${host} CPU at ${cpu_usage_5min}% for 5 minutes"
+
+  - metric: interface_traffic
+    field: oper_status
+    preset: true
+    expr: "oper_status == 2 && admin_status == 1"
+    for: 2m
+    severity: critical
+    content: "Port ${interface_name} on Arista ${host} is DOWN"
+
+  - metric: device_info
+    field: mlag_state
+    preset: true
+    expr: "mlag_state != 'active'"
+    for: 2m
+    severity: critical
+    content: "Arista ${host} MLAG state is ${mlag_state} — check MLAG peer"
+
+  - metric: bgp_summary
+    field: peer_state
+    preset: true
+    expr: "peer_state != 6"
+    for: 3m
+    severity: critical
+    content: "BGP peer ${peer_address} on Arista ${host} is not established"

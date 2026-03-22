@@ -1,0 +1,229 @@
+# ===========================================================
+#  InfraGuardian360 — HertzBeat Monitor Template
+#  Device: Cisco IP Phone (7800, 8800, 8900 series)
+#  Discovery: LLDP-MED (primary) + CDP + DHCP option 150
+#  Protocol: SNMP v2c + HTTP (SCCP/SIP registration check)
+#  Vendor OID: .1.3.6.1.4.1.9.6.1 (Cisco IP Phone)
+#  Note: Most metrics come via LLDP-MED at the switch level.
+#        This template adds per-phone SIP/SCCP health checks.
+# ===========================================================
+
+category: network
+app: cisco_ip_phone
+name:
+  zh-CN: Cisco IP 电话
+  en-US: Cisco IP Phone
+
+params:
+  - field: host
+    name:
+      en-US: Phone IP Address
+    type: host
+    required: true
+  - field: port
+    name:
+      en-US: SNMP Port
+    type: number
+    defaultValue: 161
+    required: true
+  - field: snmpVersion
+    name:
+      en-US: SNMP Version
+    type: radio
+    required: true
+    options:
+      - label: "v1"
+        value: 1
+      - label: "v2c"
+        value: 2
+    defaultValue: 2
+  - field: community
+    name:
+      en-US: SNMP Community
+    type: text
+    defaultValue: public
+  - field: webPort
+    name:
+      en-US: Web UI Port
+    type: number
+    defaultValue: 80
+
+metrics:
+
+  - name: phone_info
+    priority: 0
+    fields:
+      - field: phone_name
+        type: 1
+        label: true
+      - field: model
+        type: 1
+      - field: firmware_version
+        type: 1
+      - field: serial_number
+        type: 1
+      - field: mac_address
+        type: 1
+      - field: uptime_seconds
+        type: 0
+        unit: s
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      timeout: 10000
+      oids:
+        phone_name:       1.3.6.1.2.1.1.5.0
+        model:            1.3.6.1.4.1.9.9.156.1.1.2.0
+        firmware_version: 1.3.6.1.4.1.9.9.156.1.1.3.0
+        serial_number:    1.3.6.1.4.1.9.9.156.1.1.4.0
+        mac_address:      1.3.6.1.4.1.9.9.156.1.1.6.0
+        uptime_seconds:   1.3.6.1.2.1.1.3.0
+
+  - name: registration_status
+    priority: 1
+    fields:
+      - field: registration_state
+        type: 1
+        label: true
+      - field: call_manager_ip
+        type: 1
+      - field: call_manager_port
+        type: 0
+      - field: protocol
+        type: 1
+      - field: directory_number
+        type: 1
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      timeout: 10000
+      oids:
+        registration_state: 1.3.6.1.4.1.9.9.156.1.5.1.0
+        call_manager_ip:    1.3.6.1.4.1.9.9.156.1.5.2.0
+        call_manager_port:  1.3.6.1.4.1.9.9.156.1.5.3.0
+        protocol:           1.3.6.1.4.1.9.9.156.1.5.4.0
+        directory_number:   1.3.6.1.4.1.9.9.156.1.5.5.0
+
+  - name: call_stats
+    priority: 2
+    fields:
+      - field: calls_completed
+        type: 0
+      - field: calls_attempted
+        type: 0
+      - field: calls_in_progress
+        type: 0
+      - field: calls_failed
+        type: 0
+      - field: voice_quality_mos
+        type: 0
+      - field: jitter_ms
+        type: 0
+        unit: ms
+      - field: latency_ms
+        type: 0
+        unit: ms
+      - field: packet_loss_percent
+        type: 0
+        unit: '%'
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      timeout: 10000
+      oids:
+        calls_completed:    1.3.6.1.4.1.9.9.156.1.6.1.0
+        calls_attempted:    1.3.6.1.4.1.9.9.156.1.6.2.0
+        calls_in_progress:  1.3.6.1.4.1.9.9.156.1.6.3.0
+        calls_failed:       1.3.6.1.4.1.9.9.156.1.6.4.0
+        voice_quality_mos:  1.3.6.1.4.1.9.9.156.1.8.1.0
+        jitter_ms:          1.3.6.1.4.1.9.9.156.1.8.2.0
+        latency_ms:         1.3.6.1.4.1.9.9.156.1.8.3.0
+        packet_loss_percent: 1.3.6.1.4.1.9.9.156.1.8.4.0
+
+  - name: network_info
+    priority: 3
+    fields:
+      - field: vlan_id
+        type: 0
+      - field: switch_port
+        type: 1
+      - field: switch_hostname
+        type: 1
+      - field: poe_draw_mw
+        type: 0
+        unit: mW
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      timeout: 10000
+      oids:
+        vlan_id:          1.3.6.1.4.1.9.9.156.1.3.1.0
+        switch_port:      1.3.6.1.4.1.9.9.156.1.3.2.0
+        switch_hostname:  1.3.6.1.4.1.9.9.156.1.3.3.0
+        poe_draw_mw:      1.3.6.1.4.1.9.9.156.1.3.4.0
+
+  - name: sip_registration
+    priority: 4
+    fields:
+      - field: response_code
+        type: 0
+      - field: response_time_ms
+        type: 0
+        unit: ms
+    protocol: http
+    http:
+      host: ^_^host^_^
+      port: ^_^webPort^_^
+      url: /CGI/Java/Serviceability
+      method: GET
+      timeout: 5000
+      parseType: default
+
+alerts:
+  - metric: registration_status
+    field: registration_state
+    preset: true
+    expr: "registration_state != 'Registered'"
+    for: 5m
+    severity: critical
+    content: "Cisco IP Phone ${host} (${directory_number}) is NOT registered — state: ${registration_state}"
+    tags:
+      - critical
+      - voip
+      - unregistered
+
+  - metric: call_stats
+    field: voice_quality_mos
+    preset: true
+    expr: "voice_quality_mos < 3.5 && voice_quality_mos > 0"
+    for: 5m
+    severity: warning
+    content: "Cisco IP Phone ${host} voice quality MOS score is ${voice_quality_mos} — below acceptable threshold"
+
+  - metric: call_stats
+    field: jitter_ms
+    preset: true
+    expr: "jitter_ms > 30"
+    for: 5m
+    severity: warning
+    content: "Cisco IP Phone ${host} jitter is ${jitter_ms}ms — may cause call quality issues"
+
+  - metric: call_stats
+    field: packet_loss_percent
+    preset: true
+    expr: "packet_loss_percent > 1"
+    for: 5m
+    severity: warning
+    content: "Cisco IP Phone ${host} packet loss is ${packet_loss_percent}% — investigate network path"

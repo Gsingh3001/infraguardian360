@@ -1,0 +1,359 @@
+# ===========================================================
+#  InfraGuardian360 — HertzBeat Monitor Template
+#  Device: Dell PowerEdge Server (iDRAC 7/8/9)
+#  Covers: All Dell PowerEdge R/T/C series with iDRAC
+#  Protocol: SNMP v2c/v3 (IDRAC-MIB-SMIv2)
+#  Vendor OID: .1.3.6.1.4.1.674 (Dell)
+#  Note: Enable SNMP on iDRAC — Settings > Network > SNMP
+# ===========================================================
+
+category: server
+app: dell_idrac_server
+name:
+  zh-CN: Dell PowerEdge 服务器 (iDRAC)
+  en-US: Dell PowerEdge Server (iDRAC)
+
+params:
+  - field: host
+    name:
+      en-US: iDRAC IP Address
+    type: host
+    required: true
+  - field: port
+    name:
+      en-US: SNMP Port
+    type: number
+    defaultValue: 161
+    required: true
+  - field: snmpVersion
+    name:
+      en-US: SNMP Version
+    type: radio
+    required: true
+    options:
+      - label: "v2c"
+        value: 2
+      - label: "v3"
+        value: 3
+    defaultValue: 2
+  - field: community
+    name:
+      en-US: SNMP Community
+    type: text
+    defaultValue: public
+  - field: snmpUsername
+    name:
+      en-US: SNMP v3 Username
+    type: text
+    required: false
+    hide: true
+  - field: snmpAuthPassword
+    name:
+      en-US: Auth Password
+    type: password
+    required: false
+    hide: true
+  - field: snmpPrivPassword
+    name:
+      en-US: Priv Password
+    type: password
+    required: false
+    hide: true
+
+metrics:
+
+  - name: server_info
+    priority: 0
+    fields:
+      - field: server_name
+        type: 1
+        label: true
+      - field: model
+        type: 1
+      - field: service_tag
+        type: 1
+      - field: bios_version
+        type: 1
+      - field: idrac_version
+        type: 1
+      - field: os_name
+        type: 1
+      - field: os_version
+        type: 1
+      - field: system_uptime
+        type: 0
+        unit: s
+      - field: overall_status
+        type: 1
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 15000
+      oids:
+        server_name:    1.3.6.1.4.1.674.10892.5.1.3.1.0
+        model:          1.3.6.1.4.1.674.10892.5.1.3.12.0
+        service_tag:    1.3.6.1.4.1.674.10892.5.1.3.2.0
+        bios_version:   1.3.6.1.4.1.674.10892.5.1.3.6.0
+        idrac_version:  1.3.6.1.4.1.674.10892.5.1.3.8.0
+        os_name:        1.3.6.1.4.1.674.10892.5.1.3.16.0
+        os_version:     1.3.6.1.4.1.674.10892.5.1.3.19.0
+        system_uptime:  1.3.6.1.2.1.1.3.0
+        overall_status: 1.3.6.1.4.1.674.10892.5.2.1.0
+
+  - name: cpu_info
+    priority: 1
+    fields:
+      - field: processor_name
+        type: 1
+        label: true
+      - field: processor_status
+        type: 1
+      - field: cores
+        type: 0
+      - field: threads
+        type: 0
+      - field: speed_mhz
+        type: 0
+        unit: MHz
+      - field: current_speed_mhz
+        type: 0
+        unit: MHz
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 15000
+      oids:
+        processor_name:     1.3.6.1.4.1.674.10892.5.4.1100.30.1.23
+        processor_status:   1.3.6.1.4.1.674.10892.5.4.1100.30.1.5
+        cores:              1.3.6.1.4.1.674.10892.5.4.1100.30.1.17
+        threads:            1.3.6.1.4.1.674.10892.5.4.1100.30.1.18
+        speed_mhz:          1.3.6.1.4.1.674.10892.5.4.1100.30.1.11
+        current_speed_mhz:  1.3.6.1.4.1.674.10892.5.4.1100.30.1.12
+
+  - name: memory
+    priority: 2
+    fields:
+      - field: memory_slot
+        type: 1
+        label: true
+      - field: memory_status
+        type: 1
+      - field: memory_size_mb
+        type: 0
+        unit: MB
+      - field: memory_speed_mhz
+        type: 0
+        unit: MHz
+      - field: memory_type
+        type: 1
+      - field: memory_manufacturer
+        type: 1
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 15000
+      oids:
+        memory_slot:         1.3.6.1.4.1.674.10892.5.4.1100.50.1.23
+        memory_status:       1.3.6.1.4.1.674.10892.5.4.1100.50.1.5
+        memory_size_mb:      1.3.6.1.4.1.674.10892.5.4.1100.50.1.14
+        memory_speed_mhz:    1.3.6.1.4.1.674.10892.5.4.1100.50.1.15
+        memory_type:         1.3.6.1.4.1.674.10892.5.4.1100.50.1.7
+        memory_manufacturer: 1.3.6.1.4.1.674.10892.5.4.1100.50.1.21
+
+  - name: storage
+    priority: 3
+    fields:
+      - field: disk_name
+        type: 1
+        label: true
+      - field: disk_status
+        type: 1
+      - field: disk_state
+        type: 1
+      - field: disk_size_gb
+        type: 0
+        unit: GB
+      - field: disk_type
+        type: 1
+      - field: disk_manufacturer
+        type: 1
+      - field: predicted_failure
+        type: 1
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 15000
+      oids:
+        disk_name:         1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.2
+        disk_status:       1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.4
+        disk_state:        1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.11
+        disk_size_gb:      1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.16
+        disk_type:         1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.7
+        disk_manufacturer: 1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.3
+        predicted_failure: 1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.31
+
+  - name: power_supplies
+    priority: 4
+    fields:
+      - field: psu_name
+        type: 1
+        label: true
+      - field: psu_status
+        type: 1
+      - field: psu_output_watts
+        type: 0
+        unit: W
+      - field: psu_max_watts
+        type: 0
+        unit: W
+      - field: psu_type
+        type: 1
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 15000
+      oids:
+        psu_name:         1.3.6.1.4.1.674.10892.5.4.600.12.1.8
+        psu_status:       1.3.6.1.4.1.674.10892.5.4.600.12.1.5
+        psu_output_watts: 1.3.6.1.4.1.674.10892.5.4.600.12.1.15
+        psu_max_watts:    1.3.6.1.4.1.674.10892.5.4.600.12.1.14
+        psu_type:         1.3.6.1.4.1.674.10892.5.4.600.12.1.7
+
+  - name: temperature_sensors
+    priority: 5
+    fields:
+      - field: sensor_name
+        type: 1
+        label: true
+      - field: temp_celsius
+        type: 0
+        unit: celsius
+      - field: temp_status
+        type: 1
+      - field: warning_threshold
+        type: 0
+        unit: celsius
+      - field: critical_threshold
+        type: 0
+        unit: celsius
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 15000
+      oids:
+        sensor_name:         1.3.6.1.4.1.674.10892.5.4.700.20.1.8
+        temp_celsius:        1.3.6.1.4.1.674.10892.5.4.700.20.1.6
+        temp_status:         1.3.6.1.4.1.674.10892.5.4.700.20.1.5
+        warning_threshold:   1.3.6.1.4.1.674.10892.5.4.700.20.1.10
+        critical_threshold:  1.3.6.1.4.1.674.10892.5.4.700.20.1.11
+
+  - name: fan_sensors
+    priority: 6
+    fields:
+      - field: fan_name
+        type: 1
+        label: true
+      - field: fan_status
+        type: 1
+      - field: fan_speed_rpm
+        type: 0
+        unit: RPM
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 15000
+      oids:
+        fan_name:       1.3.6.1.4.1.674.10892.5.4.700.12.1.8
+        fan_status:     1.3.6.1.4.1.674.10892.5.4.700.12.1.5
+        fan_speed_rpm:  1.3.6.1.4.1.674.10892.5.4.700.12.1.6
+
+alerts:
+  - metric: server_info
+    field: overall_status
+    preset: true
+    expr: "overall_status == 4 || overall_status == 5"
+    for: 1m
+    severity: critical
+    content: "Dell Server ${host} overall status is CRITICAL — check iDRAC"
+
+  - metric: storage
+    field: disk_status
+    preset: true
+    expr: "disk_status != 2"
+    for: 1m
+    severity: critical
+    content: "Dell Server ${host} disk ${disk_name} status is ${disk_status} — check immediately"
+
+  - metric: storage
+    field: predicted_failure
+    preset: true
+    expr: "predicted_failure == 1"
+    for: 1m
+    severity: warning
+    content: "Dell Server ${host} disk ${disk_name} is predicting failure — replace soon"
+
+  - metric: power_supplies
+    field: psu_status
+    preset: true
+    expr: "psu_status != 2"
+    for: 1m
+    severity: critical
+    content: "Dell Server ${host} PSU ${psu_name} status is ${psu_status}"
+
+  - metric: temperature_sensors
+    field: temp_celsius
+    preset: true
+    expr: "temp_celsius > critical_threshold"
+    for: 1m
+    severity: critical
+    content: "Dell Server ${host} sensor ${sensor_name} is ${temp_celsius}°C — exceeds critical threshold"
+
+  - metric: fan_sensors
+    field: fan_status
+    preset: true
+    expr: "fan_status != 2"
+    for: 2m
+    severity: warning
+    content: "Dell Server ${host} fan ${fan_name} status is ${fan_status}"
