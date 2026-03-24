@@ -1,0 +1,18 @@
+version: "3.9"
+
+# ============================================================
+#  InfraGuardian360 — Full Stack (All Phases)
+#  Combines all 5 phases into a single compose file
+#  Use this for: single-command full deployment
+#  Usage: docker compose -f docker/docker-compose.full.yml up -d
+#
+#  Minimum requirements: 16GB RAM, 160GB disk, Ubuntu 24.04
+#  For lighter deployment run individual phase files instead
+# ============================================================
+
+include:
+  - docker-compose.core.yml
+  - docker-compose.discovery.yml
+  - docker-compose.monitoring.yml
+  - docker-compose.apm.yml
+  - docker-compose.logging.yml

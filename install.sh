@@ -272,6 +272,11 @@ launch_stack() {
   echo ""
 
   success "Stack launched"
+  log "To start the FULL stack (all phases) in one command:"
+  echo ""
+  echo "  docker compose -f docker/docker-compose.full.yml up -d"
+  echo ""
+
 }
 
 # ── SERVICE STATUS ───────────────────────────────────────────
