@@ -1,0 +1,28 @@
+# ============================================================
+#  InfraGuardian360 — Watchdog Systemd Service
+#  Install: sudo cp ig360-watchdog.service /etc/systemd/system/
+#           sudo systemctl enable ig360-watchdog
+#           sudo systemctl start ig360-watchdog
+# ============================================================
+
+[Unit]
+Description=InfraGuardian360 Self-Heal Watchdog
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/infraguardian360
+ExecStart=/usr/bin/python3 /opt/infraguardian360/scripts/watchdog.py --daemon
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ig360-watchdog
+
+# Environment
+EnvironmentFile=/opt/infraguardian360/.env
+
+[Install]
+WantedBy=multi-user.target
