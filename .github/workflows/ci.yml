@@ -1,0 +1,436 @@
+# ============================================================
+#  InfraGuardian360 — GitHub Actions CI Pipeline
+#  Runs on every push and pull request to main
+#  Checks:
+#    1. Docker Compose file validation
+#    2. YAML syntax validation
+#    3. Trivy container CVE scanning
+#    4. Secret detection (prevent accidental credential commits)
+#    5. Shell script linting
+#    6. Python script linting
+# ============================================================
+
+name: InfraGuardian360 CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run full CVE scan every Monday at 6am UTC
+    # Catches new vulnerabilities in existing images
+    - cron: '0 6 * * 1'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+
+  # ── Job 1: Validate Docker Compose files ─────────────────────
+  validate-compose:
+    name: Validate Docker Compose Files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Docker Compose
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y docker-compose-plugin
+
+      - name: Create dummy .env file for validation
+        run: |
+          cat > .env << 'EOF'
+          DOMAIN=infraguardian360.local
+          DB_PASSWORD=dummy_password_for_ci
+          SECRET_KEY=dummy_secret_key_for_ci_only
+          REDIS_PASSWORD=dummy_redis_password
+          NETDISCO_DB_PASSWORD=dummy_netdisco_password
+          NETBOX_DIODE_API_KEY=dummy_diode_key
+          CLICKHOUSE_PASSWORD=dummy_clickhouse_password
+          OPENSEARCH_ADMIN_PASSWORD=Dummy_Admin1!
+          ADMIN_EMAIL=admin@infraguardian360.local
+          ADMIN_PASSWORD=Dummy_Admin1!
+          LETSENCRYPT_EMAIL=admin@infraguardian360.local
+          EOF
+
+      - name: Validate core compose file
+        run: |
+          docker compose -f docker/docker-compose.core.yml config --quiet
+          echo "✅ core compose valid"
+
+      - name: Validate discovery compose file
+        run: |
+          docker compose -f docker/docker-compose.discovery.yml config --quiet
+          echo "✅ discovery compose valid"
+
+      - name: Validate monitoring compose file
+        run: |
+          docker compose -f docker/docker-compose.monitoring.yml config --quiet
+          echo "✅ monitoring compose valid"
+
+      - name: Validate APM compose file
+        run: |
+          docker compose -f docker/docker-compose.apm.yml config --quiet
+          echo "✅ APM compose valid"
+
+      - name: Validate logging compose file
+        run: |
+          docker compose -f docker/docker-compose.logging.yml config --quiet
+          echo "✅ logging compose valid"
+
+  # ── Job 2: YAML Syntax Validation ────────────────────────────
+  validate-yaml:
+    name: Validate YAML Files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install yamllint
+        run: pip install yamllint
+
+      - name: Create yamllint config
+        run: |
+          cat > .yamllint.yml << 'EOF'
+          extends: default
+          rules:
+            line-length:
+              max: 200
+              level: warning
+            comments:
+              min-spaces-from-content: 1
+            truthy:
+              allowed-values: ['true', 'false', 'yes', 'no', 'on', 'off']
+            braces:
+              max-spaces-inside: 1
+            brackets:
+              max-spaces-inside: 1
+          EOF
+
+      - name: Lint all YAML files
+        run: |
+          yamllint -c .yamllint.yml \
+            config/prometheus/ \
+            config/otel/ \
+            config/signoz/ \
+            config/netdisco/ \
+            config/discovery/ \
+            config/hertzbeat/define/ \
+            || true
+          echo "✅ YAML validation complete"
+
+  # ── Job 3: Secret Detection ───────────────────────────────────
+  secret-scan:
+    name: Secret Detection
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks secret scanner
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+        continue-on-error: true
+
+      - name: Check for .env files accidentally committed
+        run: |
+          if git ls-files | grep -E "^\.env$|^\.env\." | grep -v ".env.example"; then
+            echo "❌ ERROR: .env file found in repository!"
+            echo "Remove it immediately: git rm --cached .env"
+            exit 1
+          fi
+          echo "✅ No .env files committed"
+
+      - name: Check for private keys accidentally committed
+        run: |
+          if grep -rE "BEGIN (RSA|EC|OPENSSH) PRIVATE KEY" \
+            --include="*.yml" --include="*.yaml" \
+            --include="*.json" --include="*.conf" \
+            --include="*.sh" --include="*.py" \
+            --include="*.txt" --include="*.md" \
+            . 2>/dev/null | grep -v ".git"; then
+            echo "❌ ERROR: Private key found in repository!"
+            exit 1
+          fi
+          echo "✅ No private keys found"
+
+      - name: Check for hardcoded passwords
+        run: |
+          if grep -rE "(password|passwd|secret|token|api_key)\s*=\s*['\"][^'\"]{8,}['\"]" \
+            --include="*.py" --include="*.sh" \
+            --include="*.js" --include="*.ts" \
+            . 2>/dev/null | \
+            grep -v "changeme" | \
+            grep -v "dummy" | \
+            grep -v "example" | \
+            grep -v "your_" | \
+            grep -v "\.git" | \
+            grep -v "test" | \
+            grep -v "#"; then
+            echo "⚠️  WARNING: Possible hardcoded credentials found — review above"
+          else
+            echo "✅ No hardcoded credentials found"
+          fi
+
+  # ── Job 4: Shell Script Linting ───────────────────────────────
+  lint-shell:
+    name: Lint Shell Scripts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: Lint all shell scripts
+        run: |
+          find . -name "*.sh" -not -path "./.git/*" | while read -r script; do
+            echo "Checking: $script"
+            shellcheck --severity=warning "$script" || true
+          done
+          echo "✅ Shell script linting complete"
+
+  # ── Job 5: Python Script Linting ─────────────────────────────
+  lint-python:
+    name: Lint Python Scripts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install linting tools
+        run: |
+          pip install flake8 black isort
+
+      - name: Run flake8
+        run: |
+          flake8 scripts/ \
+            --max-line-length=120 \
+            --ignore=E501,W503,E203 \
+            --count \
+            --statistics \
+            || true
+          echo "✅ Python linting complete"
+
+      - name: Check Python formatting with black
+        run: |
+          black --check --diff scripts/ || true
+          echo "✅ Python format check complete"
+
+  # ── Job 6: Trivy CVE Scanning ─────────────────────────────────
+  trivy-scan:
+    name: Trivy Container CVE Scan
+    runs-on: ubuntu-latest
+    needs: [validate-compose]
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Trivy
+        run: |
+          sudo apt-get install -y wget apt-transport-https gnupg
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | \
+            sudo gpg --dearmor -o /usr/share/keyrings/trivy.gpg
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] \
+            https://aquasecurity.github.io/trivy-repo/deb generic main" | \
+            sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update -qq
+          sudo apt-get install -y trivy
+          trivy --version
+
+      - name: Scan NetBox image
+        run: |
+          trivy image \
+            --exit-code 0 \
+            --severity HIGH,CRITICAL \
+            --format table \
+            --no-progress \
+            ghcr.io/netbox-community/netbox:latest
+          echo "✅ NetBox scan complete"
+
+      - name: Scan HertzBeat image
+        run: |
+          trivy image \
+            --exit-code 0 \
+            --severity HIGH,CRITICAL \
+            --format table \
+            --no-progress \
+            apache/hertzbeat:latest
+          echo "✅ HertzBeat scan complete"
+
+      - name: Scan Prometheus image
+        run: |
+          trivy image \
+            --exit-code 0 \
+            --severity HIGH,CRITICAL \
+            --format table \
+            --no-progress \
+            prom/prometheus:latest
+          echo "✅ Prometheus scan complete"
+
+      - name: Scan OpenSearch image
+        run: |
+          trivy image \
+            --exit-code 0 \
+            --severity HIGH,CRITICAL \
+            --format table \
+            --no-progress \
+            opensearchproject/opensearch:2.12.0
+          echo "✅ OpenSearch scan complete"
+
+      - name: Scan Keycloak image
+        run: |
+          trivy image \
+            --exit-code 0 \
+            --severity HIGH,CRITICAL \
+            --format table \
+            --no-progress \
+            quay.io/keycloak/keycloak:latest
+          echo "✅ Keycloak scan complete"
+
+      - name: Scan Traefik image
+        run: |
+          trivy image \
+            --exit-code 0 \
+            --severity HIGH,CRITICAL \
+            --format table \
+            --no-progress \
+            traefik:latest
+          echo "✅ Traefik scan complete"
+
+      - name: Scan VictoriaMetrics image
+        run: |
+          trivy image \
+            --exit-code 0 \
+            --severity HIGH,CRITICAL \
+            --format table \
+            --no-progress \
+            victoriametrics/victoria-metrics:latest
+          echo "✅ VictoriaMetrics scan complete"
+
+      - name: Scan ClickHouse image
+        run: |
+          trivy image \
+            --exit-code 0 \
+            --severity HIGH,CRITICAL \
+            --format table \
+            --no-progress \
+            clickhouse/clickhouse-server:24.1.2-alpine
+          echo "✅ ClickHouse scan complete"
+
+      - name: Generate full SARIF security report
+        run: |
+          trivy image \
+            --format sarif \
+            --output trivy-results.sarif \
+            --severity HIGH,CRITICAL \
+            --no-progress \
+            apache/hertzbeat:latest || true
+
+      - name: Upload SARIF results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
+        continue-on-error: true
+
+  # ── Job 7: Repository Health Check ───────────────────────────
+  repo-health:
+    name: Repository Health Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check required files exist
+        run: |
+          required_files=(
+            "README.md"
+            "NOTICE"
+            "LICENSE"
+            ".gitignore"
+            "install.sh"
+            "config/.env.example"
+            "docker/docker-compose.core.yml"
+            "docker/docker-compose.monitoring.yml"
+            "agents/install-lldpd.sh"
+            "agents/install-node-exporter.sh"
+            "agents/install-windows.ps1"
+          )
+          all_present=true
+          for file in "${required_files[@]}"; do
+            if [ -f "$file" ]; then
+              echo "✅ $file"
+            else
+              echo "❌ MISSING: $file"
+              all_present=false
+            fi
+          done
+          if [ "$all_present" = false ]; then
+            echo "ERROR: Required files missing"
+            exit 1
+          fi
+          echo "✅ All required files present"
+
+      - name: Check .gitignore covers secrets
+        run: |
+          required_ignores=(
+            ".env"
+            "*.key"
+            "*.pem"
+            "data/"
+            "secrets/"
+          )
+          for pattern in "${required_ignores[@]}"; do
+            if grep -q "$pattern" .gitignore; then
+              echo "✅ .gitignore covers: $pattern"
+            else
+              echo "⚠️  .gitignore missing pattern: $pattern"
+            fi
+          done
+
+      - name: Check device template count
+        run: |
+          template_count=$(find config/hertzbeat/define -name "*.yml" \
+            -not -name "README*" | wc -l)
+          echo "📦 Device templates found: $template_count"
+          if [ "$template_count" -lt 10 ]; then
+            echo "⚠️  WARNING: Fewer templates than expected"
+          else
+            echo "✅ Template library healthy"
+          fi
+
+      - name: Count total lines of code
+        run: |
+          echo "📊 Repository statistics:"
+          echo "YAML files:"
+          find . -name "*.yml" -o -name "*.yaml" | \
+            grep -v ".git" | \
+            xargs wc -l 2>/dev/null | tail -1
+          echo "Shell scripts:"
+          find . -name "*.sh" | \
+            grep -v ".git" | \
+            xargs wc -l 2>/dev/null | tail -1
+          echo "Python scripts:"
+          find . -name "*.py" | \
+            grep -v ".git" | \
+            xargs wc -l 2>/dev/null | tail -1
+          echo "✅ Stats complete"

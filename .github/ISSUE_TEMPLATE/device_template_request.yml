@@ -1,0 +1,60 @@
+name: Device Template Request
+description: Request a new HertzBeat monitoring template
+title: "[TEMPLATE] "
+labels: ["template-request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Request a new device monitoring template for InfraGuardian360.
+
+  - type: input
+    id: device
+    attributes:
+      label: Device name and model
+      placeholder: "e.g. Cisco Catalyst 9500 Series"
+    validations:
+      required: true
+
+  - type: input
+    id: vendor_oid
+    attributes:
+      label: Vendor SNMP OID
+      placeholder: "e.g. .1.3.6.1.4.1.9"
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Device category
+      options:
+        - Switch
+        - Router
+        - Firewall
+        - Wireless AP
+        - Server
+        - Printer / MFP
+        - IP Phone
+        - Hypervisor
+        - Storage
+        - UPS
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: metrics
+    attributes:
+      label: Key metrics needed
+      placeholder: |
+        - CPU usage %
+        - Memory usage %
+        - Port traffic per interface
+        - Temperature sensors
+
+  - type: checkboxes
+    id: have_device
+    attributes:
+      label: Do you have this device to test with?
+      options:
+        - label: Yes — I can test a template if provided
+        - label: No — requesting based on customer need

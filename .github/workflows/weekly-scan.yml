@@ -1,0 +1,82 @@
+# ============================================================
+#  InfraGuardian360 — Weekly Security Scan
+#  Runs every Monday 6am UTC
+#  Catches new CVEs in images that haven't been updated
+#  Results appear in GitHub Security → Vulnerability Alerts
+# ============================================================
+
+name: Weekly Security Scan
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+
+  full-cve-scan:
+    name: Full CVE Scan — All Images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Trivy
+        run: |
+          sudo apt-get install -y wget apt-transport-https gnupg
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | \
+            sudo gpg --dearmor -o /usr/share/keyrings/trivy.gpg
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] \
+            https://aquasecurity.github.io/trivy-repo/deb generic main" | \
+            sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update -qq
+          sudo apt-get install -y trivy
+
+      - name: Scan all platform images
+        run: |
+          images=(
+            "ghcr.io/netbox-community/netbox:latest"
+            "apache/hertzbeat:latest"
+            "prom/prometheus:latest"
+            "prom/alertmanager:latest"
+            "victoriametrics/victoria-metrics:latest"
+            "signoz/query-service:0.43.0"
+            "clickhouse/clickhouse-server:24.1.2-alpine"
+            "opensearchproject/opensearch:2.12.0"
+            "opensearchproject/opensearch-dashboards:2.12.0"
+            "quay.io/keycloak/keycloak:latest"
+            "traefik:latest"
+            "fluent/fluent-bit:3.0"
+            "otel/opentelemetry-collector-contrib:latest"
+            "netdisco/netdisco:latest"
+            "postgres:16-alpine"
+            "redis:7-alpine"
+          )
+
+          echo "# InfraGuardian360 Weekly CVE Report" > cve-report.md
+          echo "Generated: $(date)" >> cve-report.md
+          echo "" >> cve-report.md
+
+          for image in "${images[@]}"; do
+            echo "## $image" >> cve-report.md
+            trivy image \
+              --exit-code 0 \
+              --severity HIGH,CRITICAL \
+              --format table \
+              --no-progress \
+              "$image" >> cve-report.md 2>&1 || true
+            echo "" >> cve-report.md
+          done
+
+          cat cve-report.md
+
+      - name: Upload CVE report as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cve-report-${{ github.run_number }}
+          path: cve-report.md
+          retention-days: 90
