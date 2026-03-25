@@ -1,0 +1,185 @@
+# ===========================================================
+#  InfraGuardian360 — HertzBeat Monitor Template
+#  Device: Avaya / Poly (formerly Polycom) IP Phones
+#  Covers: Avaya J100 series, Avaya 9600 series
+#          Poly VVX 300/400/500/600 series
+#  Protocol: SNMP v2c + HTTP
+#  Vendor OID: .1.3.6.1.4.1.6889 (Avaya)
+#              .1.3.6.1.4.1.13885 (Polycom/Poly)
+# ===========================================================
+
+category: network
+app: avaya_ip_phone
+name:
+  zh-CN: Avaya/Poly IP 电话
+  en-US: Avaya / Poly IP Phone
+
+params:
+  - field: host
+    name:
+      en-US: Phone IP Address
+    type: host
+    required: true
+  - field: port
+    name:
+      en-US: SNMP Port
+    type: number
+    defaultValue: 161
+    required: true
+  - field: snmpVersion
+    name:
+      en-US: SNMP Version
+    type: radio
+    required: true
+    options:
+      - label: "v2c"
+        value: 2
+    defaultValue: 2
+  - field: community
+    name:
+      en-US: SNMP Community
+    type: text
+    defaultValue: public
+  - field: vendor
+    name:
+      en-US: Vendor
+    type: radio
+    required: true
+    options:
+      - label: "Avaya"
+        value: avaya
+      - label: "Poly/Polycom"
+        value: poly
+    defaultValue: avaya
+
+metrics:
+
+  - name: phone_info
+    priority: 0
+    fields:
+      - field: phone_name
+        type: 1
+        label: true
+      - field: model
+        type: 1
+      - field: firmware_version
+        type: 1
+      - field: mac_address
+        type: 1
+      - field: uptime_seconds
+        type: 0
+        unit: s
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      timeout: 10000
+      oids:
+        phone_name:       1.3.6.1.2.1.1.5.0
+        model:            1.3.6.1.4.1.6889.1.69.1.2.0
+        firmware_version: 1.3.6.1.4.1.6889.1.69.1.4.0
+        mac_address:      1.3.6.1.4.1.6889.1.69.1.6.0
+        uptime_seconds:   1.3.6.1.2.1.1.3.0
+
+  - name: registration
+    priority: 1
+    fields:
+      - field: sip_server
+        type: 1
+        label: true
+      - field: registration_status
+        type: 1
+      - field: extension_number
+        type: 1
+      - field: active_calls
+        type: 0
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      timeout: 10000
+      oids:
+        sip_server:           1.3.6.1.4.1.6889.1.69.2.1.0
+        registration_status:  1.3.6.1.4.1.6889.1.69.2.2.0
+        extension_number:     1.3.6.1.4.1.6889.1.69.2.3.0
+        active_calls:         1.3.6.1.4.1.6889.1.69.2.4.0
+
+  - name: call_quality
+    priority: 2
+    fields:
+      - field: mos_score
+        type: 0
+      - field: jitter_ms
+        type: 0
+        unit: ms
+      - field: packet_loss_percent
+        type: 0
+        unit: '%'
+      - field: latency_ms
+        type: 0
+        unit: ms
+      - field: codec
+        type: 1
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      timeout: 10000
+      oids:
+        mos_score:           1.3.6.1.4.1.6889.1.69.3.1.0
+        jitter_ms:           1.3.6.1.4.1.6889.1.69.3.2.0
+        packet_loss_percent: 1.3.6.1.4.1.6889.1.69.3.3.0
+        latency_ms:          1.3.6.1.4.1.6889.1.69.3.4.0
+        codec:               1.3.6.1.4.1.6889.1.69.3.5.0
+
+  - name: network
+    priority: 3
+    fields:
+      - field: vlan_id
+        type: 0
+      - field: poe_class
+        type: 1
+      - field: switch_port
+        type: 1
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      timeout: 10000
+      oids:
+        vlan_id:    1.3.6.1.4.1.6889.1.69.4.1.0
+        poe_class:  1.3.6.1.4.1.6889.1.69.4.2.0
+        switch_port: 1.3.6.1.4.1.6889.1.69.4.3.0
+
+alerts:
+  - metric: registration
+    field: registration_status
+    preset: true
+    expr: "registration_status != 'registered'"
+    for: 5m
+    severity: critical
+    content: "Avaya/Poly phone ${host} (${extension_number}) is NOT registered to ${sip_server}"
+
+  - metric: call_quality
+    field: mos_score
+    preset: true
+    expr: "mos_score < 3.5 && mos_score > 0"
+    for: 5m
+    severity: warning
+    content: "Avaya/Poly phone ${host} MOS score is ${mos_score} — poor call quality"
+
+  - metric: call_quality
+    field: jitter_ms
+    preset: true
+    expr: "jitter_ms > 30"
+    for: 5m
+    severity: warning
+    content: "Avaya/Poly phone ${host} jitter is ${jitter_ms}ms"

@@ -1,0 +1,215 @@
+# ===========================================================
+#  InfraGuardian360 — HertzBeat Monitor Template
+#  Device: Brother Printers and MFPs
+#  Covers: Brother HL, DCP, MFC series
+#  Protocol: SNMP v1/v2c (PRINTER-MIB + Brother vendor MIBs)
+#  Vendor OID: .1.3.6.1.4.1.2435 (Brother Industries)
+# ===========================================================
+
+category: network
+app: brother_printer
+name:
+  zh-CN: Brother 打印机
+  en-US: Brother Printer / MFP
+
+params:
+  - field: host
+    name:
+      en-US: Host Address
+    type: host
+    required: true
+  - field: port
+    name:
+      en-US: SNMP Port
+    type: number
+    defaultValue: 161
+    required: true
+  - field: snmpVersion
+    name:
+      en-US: SNMP Version
+    type: radio
+    required: true
+    options:
+      - label: "v1"
+        value: 1
+      - label: "v2c"
+        value: 2
+    defaultValue: 1
+  - field: community
+    name:
+      en-US: SNMP Community
+    type: text
+    defaultValue: public
+
+metrics:
+
+  - name: printer_info
+    priority: 0
+    fields:
+      - field: printer_name
+        type: 1
+        label: true
+      - field: model
+        type: 1
+      - field: serial_number
+        type: 1
+      - field: firmware_version
+        type: 1
+      - field: printer_status
+        type: 1
+      - field: uptime_seconds
+        type: 0
+        unit: s
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      timeout: 15000
+      oids:
+        printer_name:     1.3.6.1.2.1.1.5.0
+        model:            1.3.6.1.4.1.2435.2.3.9.4.2.1.5.5.1.0
+        serial_number:    1.3.6.1.4.1.2435.2.3.9.4.2.1.5.5.2.0
+        firmware_version: 1.3.6.1.4.1.2435.2.3.9.4.2.1.5.5.3.0
+        printer_status:   1.3.6.1.2.1.25.3.5.1.1.1
+        uptime_seconds:   1.3.6.1.2.1.1.3.0
+
+  - name: consumables
+    priority: 1
+    fields:
+      - field: marker_name
+        type: 1
+        label: true
+      - field: max_capacity
+        type: 0
+      - field: current_level
+        type: 0
+      - field: level_percent
+        type: 0
+        unit: '%'
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      timeout: 15000
+      oids:
+        marker_name:   1.3.6.1.2.1.43.11.1.1.6.1
+        max_capacity:  1.3.6.1.2.1.43.11.1.1.8.1
+        current_level: 1.3.6.1.2.1.43.11.1.1.9.1
+
+  - name: brother_toner
+    priority: 2
+    fields:
+      - field: black_toner_percent
+        type: 0
+        unit: '%'
+      - field: cyan_toner_percent
+        type: 0
+        unit: '%'
+      - field: magenta_toner_percent
+        type: 0
+        unit: '%'
+      - field: yellow_toner_percent
+        type: 0
+        unit: '%'
+      - field: drum_percent
+        type: 0
+        unit: '%'
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      timeout: 15000
+      oids:
+        black_toner_percent:   1.3.6.1.4.1.2435.2.3.9.4.2.1.5.5.10.0
+        cyan_toner_percent:    1.3.6.1.4.1.2435.2.3.9.4.2.1.5.5.11.0
+        magenta_toner_percent: 1.3.6.1.4.1.2435.2.3.9.4.2.1.5.5.12.0
+        yellow_toner_percent:  1.3.6.1.4.1.2435.2.3.9.4.2.1.5.5.13.0
+        drum_percent:          1.3.6.1.4.1.2435.2.3.9.4.2.1.5.5.14.0
+
+  - name: page_counts
+    priority: 3
+    fields:
+      - field: total_pages
+        type: 0
+      - field: mono_pages
+        type: 0
+      - field: colour_pages
+        type: 0
+      - field: scan_pages
+        type: 0
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      timeout: 15000
+      oids:
+        total_pages:   1.3.6.1.2.1.43.10.2.1.4.1.1
+        mono_pages:    1.3.6.1.4.1.2435.2.3.9.4.2.1.5.5.20.0
+        colour_pages:  1.3.6.1.4.1.2435.2.3.9.4.2.1.5.5.21.0
+        scan_pages:    1.3.6.1.4.1.2435.2.3.9.4.2.1.5.5.22.0
+
+  - name: paper_trays
+    priority: 4
+    fields:
+      - field: tray_name
+        type: 1
+        label: true
+      - field: tray_status
+        type: 1
+      - field: tray_capacity
+        type: 0
+      - field: tray_level
+        type: 0
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      timeout: 15000
+      oids:
+        tray_name:     1.3.6.1.2.1.43.8.2.1.13.1
+        tray_status:   1.3.6.1.2.1.43.8.2.1.11.1
+        tray_capacity: 1.3.6.1.2.1.43.8.2.1.9.1
+        tray_level:    1.3.6.1.2.1.43.8.2.1.10.1
+
+alerts:
+  - metric: brother_toner
+    field: black_toner_percent
+    preset: true
+    expr: "black_toner_percent < 10"
+    for: 1m
+    severity: critical
+    content: "Brother printer ${host} black toner critically low at ${black_toner_percent}%"
+
+  - metric: brother_toner
+    field: black_toner_percent
+    preset: true
+    expr: "black_toner_percent < 20"
+    for: 1m
+    severity: warning
+    content: "Brother printer ${host} black toner low at ${black_toner_percent}%"
+
+  - metric: brother_toner
+    field: drum_percent
+    preset: true
+    expr: "drum_percent < 10"
+    for: 1m
+    severity: warning
+    content: "Brother printer ${host} drum unit at ${drum_percent}% — replace soon"
+
+  - metric: printer_info
+    field: printer_status
+    preset: true
+    expr: "printer_status == 5"
+    for: 2m
+    severity: critical
+    content: "Brother printer ${host} is in ERROR state"

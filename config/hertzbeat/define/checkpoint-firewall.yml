@@ -1,0 +1,249 @@
+# ===========================================================
+#  InfraGuardian360 — HertzBeat Monitor Template
+#  Device: Check Point Firewall / Security Gateway
+#  Covers: Check Point R80.x, R81.x (all models)
+#  Protocol: SNMP v2c/v3 (CHECKPOINT-MIB)
+#  Vendor OID: .1.3.6.1.4.1.2620 (Check Point Software)
+# ===========================================================
+
+category: network
+app: checkpoint_firewall
+name:
+  zh-CN: Check Point 防火墙
+  en-US: Check Point Firewall
+
+params:
+  - field: host
+    name:
+      en-US: Host Address
+    type: host
+    required: true
+  - field: port
+    name:
+      en-US: SNMP Port
+    type: number
+    defaultValue: 161
+    required: true
+  - field: snmpVersion
+    name:
+      en-US: SNMP Version
+    type: radio
+    required: true
+    options:
+      - label: "v2c"
+        value: 2
+      - label: "v3"
+        value: 3
+    defaultValue: 2
+  - field: community
+    name:
+      en-US: SNMP Community
+    type: text
+    defaultValue: public
+  - field: snmpUsername
+    name:
+      en-US: SNMP v3 Username
+    type: text
+    required: false
+    hide: true
+  - field: snmpAuthPassword
+    name:
+      en-US: Auth Password
+    type: password
+    required: false
+    hide: true
+  - field: snmpPrivPassword
+    name:
+      en-US: Priv Password
+    type: password
+    required: false
+    hide: true
+
+metrics:
+
+  - name: device_info
+    priority: 0
+    fields:
+      - field: hostname
+        type: 1
+        label: true
+      - field: fw_version
+        type: 1
+      - field: os_build
+        type: 1
+      - field: uptime_seconds
+        type: 0
+        unit: s
+      - field: ha_state
+        type: 1
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        hostname:       1.3.6.1.2.1.1.5.0
+        fw_version:     1.3.6.1.4.1.2620.1.6.4.1.0
+        os_build:       1.3.6.1.4.1.2620.1.6.4.3.0
+        uptime_seconds: 1.3.6.1.2.1.1.3.0
+        ha_state:       1.3.6.1.4.1.2620.1.5.101.1.0
+
+  - name: cpu_memory
+    priority: 1
+    fields:
+      - field: cpu_usage_percent
+        type: 0
+        unit: '%'
+      - field: memory_total_kb
+        type: 0
+        unit: KB
+      - field: memory_used_kb
+        type: 0
+        unit: KB
+      - field: memory_free_kb
+        type: 0
+        unit: KB
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        cpu_usage_percent: 1.3.6.1.4.1.2620.1.6.7.2.4.0
+        memory_total_kb:   1.3.6.1.4.1.2620.1.6.7.4.3.0
+        memory_used_kb:    1.3.6.1.4.1.2620.1.6.7.4.4.0
+        memory_free_kb:    1.3.6.1.4.1.2620.1.6.7.4.5.0
+
+  - name: firewall_stats
+    priority: 2
+    fields:
+      - field: accepted_packets
+        type: 0
+      - field: rejected_packets
+        type: 0
+      - field: dropped_packets
+        type: 0
+      - field: logged_packets
+        type: 0
+      - field: connections_current
+        type: 0
+      - field: connections_peak
+        type: 0
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        accepted_packets:    1.3.6.1.4.1.2620.1.1.4.0
+        rejected_packets:    1.3.6.1.4.1.2620.1.1.6.0
+        dropped_packets:     1.3.6.1.4.1.2620.1.1.5.0
+        logged_packets:      1.3.6.1.4.1.2620.1.1.7.0
+        connections_current: 1.3.6.1.4.1.2620.1.1.25.3.0
+        connections_peak:    1.3.6.1.4.1.2620.1.1.25.4.0
+
+  - name: vpn_tunnels
+    priority: 3
+    fields:
+      - field: tunnel_peer
+        type: 1
+        label: true
+      - field: tunnel_status
+        type: 1
+      - field: tunnel_type
+        type: 1
+      - field: bytes_encrypted
+        type: 0
+        unit: bytes
+      - field: bytes_decrypted
+        type: 0
+        unit: bytes
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        tunnel_peer:       1.3.6.1.4.1.2620.1.2.5.1.2
+        tunnel_status:     1.3.6.1.4.1.2620.1.2.5.1.5
+        tunnel_type:       1.3.6.1.4.1.2620.1.2.5.1.4
+        bytes_encrypted:   1.3.6.1.4.1.2620.1.2.5.1.9
+        bytes_decrypted:   1.3.6.1.4.1.2620.1.2.5.1.10
+
+  - name: interface_traffic
+    priority: 4
+    fields:
+      - field: interface_name
+        type: 1
+        label: true
+      - field: admin_status
+        type: 1
+      - field: oper_status
+        type: 1
+      - field: in_octets
+        type: 0
+        unit: bytes
+      - field: out_octets
+        type: 0
+        unit: bytes
+    protocol: snmp
+    snmp:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      version: ^_^snmpVersion^_^
+      community: ^_^community^_^
+      username: ^_^snmpUsername^_^
+      authPassword: ^_^snmpAuthPassword^_^
+      privPassword: ^_^snmpPrivPassword^_^
+      timeout: 10000
+      oids:
+        interface_name: 1.3.6.1.2.1.31.1.1.1.1
+        admin_status:   1.3.6.1.2.1.2.2.1.7
+        oper_status:    1.3.6.1.2.1.2.2.1.8
+        in_octets:      1.3.6.1.2.1.31.1.1.1.6
+        out_octets:     1.3.6.1.2.1.31.1.1.1.10
+
+alerts:
+  - metric: cpu_memory
+    field: cpu_usage_percent
+    preset: true
+    expr: "cpu_usage_percent > 90"
+    for: 5m
+    severity: critical
+    content: "Check Point ${host} CPU at ${cpu_usage_percent}%"
+
+  - metric: vpn_tunnels
+    field: tunnel_status
+    preset: true
+    expr: "tunnel_status != 'Active'"
+    for: 2m
+    severity: critical
+    content: "Check Point VPN tunnel to ${tunnel_peer} is ${tunnel_status}"
+
+  - metric: device_info
+    field: ha_state
+    preset: true
+    expr: "ha_state != 'active' && ha_state != 'standby'"
+    for: 2m
+    severity: critical
+    content: "Check Point ${host} HA state is ${ha_state}"

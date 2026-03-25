@@ -1,0 +1,228 @@
+# ===========================================================
+#  InfraGuardian360 — HertzBeat Monitor Template
+#  Device: Nutanix AHV Hyperconverged Cluster
+#  Protocol: Nutanix REST API v2/v3 (HTTP)
+#  Common in: NHS trusts, banks, large enterprise
+#  Requires: Nutanix Prism Element or Prism Central access
+# ===========================================================
+
+category: server
+app: nutanix_ahv_cluster
+name:
+  zh-CN: Nutanix AHV 超融合集群
+  en-US: Nutanix AHV Cluster
+
+params:
+  - field: host
+    name:
+      en-US: Prism Element IP / Prism Central IP
+    type: host
+    required: true
+  - field: port
+    name:
+      en-US: API Port
+    type: number
+    defaultValue: 9440
+    required: true
+  - field: username
+    name:
+      en-US: Username
+    type: text
+    defaultValue: admin
+    required: true
+  - field: password
+    name:
+      en-US: Password
+    type: password
+    required: true
+  - field: ssl
+    name:
+      en-US: Enable SSL
+    type: boolean
+    defaultValue: true
+
+metrics:
+
+  - name: cluster_info
+    priority: 0
+    fields:
+      - field: cluster_name
+        type: 1
+        label: true
+      - field: cluster_version
+        type: 1
+      - field: num_nodes
+        type: 0
+      - field: num_vms
+        type: 0
+      - field: cluster_status
+        type: 1
+    protocol: http
+    http:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      url: /api/nutanix/v2.0/cluster
+      method: GET
+      ssl: ^_^ssl^_^
+      basicAuthUsername: ^_^username^_^
+      basicAuthPassword: ^_^password^_^
+      parseType: jsonPath
+      parseScript: "$"
+
+  - name: cluster_resources
+    priority: 1
+    fields:
+      - field: cpu_capacity_hz
+        type: 0
+        unit: Hz
+      - field: cpu_usage_hz
+        type: 0
+        unit: Hz
+      - field: cpu_usage_percent
+        type: 0
+        unit: '%'
+      - field: memory_capacity_bytes
+        type: 0
+        unit: bytes
+      - field: memory_usage_bytes
+        type: 0
+        unit: bytes
+      - field: memory_usage_percent
+        type: 0
+        unit: '%'
+      - field: storage_capacity_bytes
+        type: 0
+        unit: bytes
+      - field: storage_usage_bytes
+        type: 0
+        unit: bytes
+    protocol: http
+    http:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      url: /api/nutanix/v2.0/cluster
+      method: GET
+      ssl: ^_^ssl^_^
+      basicAuthUsername: ^_^username^_^
+      basicAuthPassword: ^_^password^_^
+      parseType: jsonPath
+      parseScript: "$.stats"
+
+  - name: nodes
+    priority: 2
+    fields:
+      - field: node_name
+        type: 1
+        label: true
+      - field: node_status
+        type: 1
+      - field: node_model
+        type: 1
+      - field: hypervisor_version
+        type: 1
+      - field: num_vms
+        type: 0
+      - field: cpu_usage_percent
+        type: 0
+        unit: '%'
+      - field: memory_usage_percent
+        type: 0
+        unit: '%'
+    protocol: http
+    http:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      url: /api/nutanix/v2.0/hosts
+      method: GET
+      ssl: ^_^ssl^_^
+      basicAuthUsername: ^_^username^_^
+      basicAuthPassword: ^_^password^_^
+      parseType: jsonPath
+      parseScript: "$.entities[*]"
+
+  - name: storage_pools
+    priority: 3
+    fields:
+      - field: pool_name
+        type: 1
+        label: true
+      - field: capacity_bytes
+        type: 0
+        unit: bytes
+      - field: used_bytes
+        type: 0
+        unit: bytes
+      - field: free_bytes
+        type: 0
+        unit: bytes
+      - field: used_percent
+        type: 0
+        unit: '%'
+    protocol: http
+    http:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      url: /api/nutanix/v2.0/storage_pools
+      method: GET
+      ssl: ^_^ssl^_^
+      basicAuthUsername: ^_^username^_^
+      basicAuthPassword: ^_^password^_^
+      parseType: jsonPath
+      parseScript: "$.entities[*]"
+
+  - name: alerts
+    priority: 4
+    fields:
+      - field: alert_title
+        type: 1
+        label: true
+      - field: severity
+        type: 1
+      - field: alert_type
+        type: 1
+      - field: acknowledged
+        type: 1
+    protocol: http
+    http:
+      host: ^_^host^_^
+      port: ^_^port^_^
+      url: /api/nutanix/v2.0/alerts?resolved=false&count=20
+      method: GET
+      ssl: ^_^ssl^_^
+      basicAuthUsername: ^_^username^_^
+      basicAuthPassword: ^_^password^_^
+      parseType: jsonPath
+      parseScript: "$.entities[*]"
+
+alerts:
+  - metric: cluster_resources
+    field: cpu_usage_percent
+    preset: true
+    expr: "cpu_usage_percent > 85"
+    for: 10m
+    severity: warning
+    content: "Nutanix cluster ${host} CPU at ${cpu_usage_percent}%"
+
+  - metric: cluster_resources
+    field: memory_usage_percent
+    preset: true
+    expr: "memory_usage_percent > 90"
+    for: 5m
+    severity: warning
+    content: "Nutanix cluster ${host} memory at ${memory_usage_percent}%"
+
+  - metric: storage_pools
+    field: used_percent
+    preset: true
+    expr: "used_percent > 80"
+    for: 5m
+    severity: warning
+    content: "Nutanix storage pool ${pool_name} at ${used_percent}% — plan expansion"
+
+  - metric: nodes
+    field: node_status
+    preset: true
+    expr: "node_status != 'NORMAL'"
+    for: 2m
+    severity: critical
+    content: "Nutanix node ${node_name} status is ${node_status}"
