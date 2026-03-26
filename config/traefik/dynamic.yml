@@ -1,0 +1,43 @@
+# ============================================================
+#  InfraGuardian360 — Traefik Dynamic Configuration
+#  Rate limiting, security headers, middleware chains
+# ============================================================
+
+http:
+  middlewares:
+
+    # ── Rate limiting — general ───────────────────────────────
+    ratelimit:
+      rateLimit:
+        average: 100
+        burst: 50
+        period: 1s
+
+    # ── Rate limiting — strict (login pages) ─────────────────
+    ratelimit-strict:
+      rateLimit:
+        average: 20
+        burst: 10
+        period: 1s
+
+    # ── Security headers ──────────────────────────────────────
+    secure-headers:
+      headers:
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        forceSTSHeader: true
+        frameDeny: true
+        contentTypeNosniff: true
+        browserXssFilter: true
+        referrerPolicy: "strict-origin-when-cross-origin"
+        permissionsPolicy: "camera=(), microphone=(), geolocation=()"
+        customResponseHeaders:
+          X-Robots-Tag: "noindex, nofollow"
+          Server: ""
+
+    # ── Redirect HTTP to HTTPS ────────────────────────────────
+    https-redirect:
+      redirectScheme:
+        scheme: https
+        permanent: true

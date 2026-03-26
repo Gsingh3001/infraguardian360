@@ -38,12 +38,17 @@ services:
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
 
   # ── Zookeeper — ClickHouse cluster coordination ──────────────
-  zookeeper:
+zookeeper:
     image: bitnami/zookeeper:3.7.1
     container_name: ig360-zookeeper
     restart: unless-stopped
     environment:
-      ALLOW_ANONYMOUS_LOGIN: "yes"
+      ALLOW_ANONYMOUS_LOGIN: "no"
+      ZOO_ENABLE_AUTH: "yes"
+      ZOO_SERVER_USERS: zookeeper
+      ZOO_SERVER_PASSWORDS: ${ZOOKEEPER_PASSWORD}
+      ZOO_CLIENT_USER: zookeeper
+      ZOO_CLIENT_PASSWORD: ${ZOOKEEPER_PASSWORD}
       ZOO_AUTOPURGE_INTERVAL: 1
     volumes:
       - zookeeper-data:/bitnami/zookeeper
@@ -122,8 +127,8 @@ services:
       clickhouse:
         condition: service_healthy
     ports:
-      - "4317:4317"
-      - "4318:4318"
+      - "127.0.0.1:4317:4317"
+      - "127.0.0.1:4318:4318"
     networks:
       - ig360
 

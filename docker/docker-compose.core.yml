@@ -2,6 +2,24 @@ version: "3.9"
 
 services:
 
+# ── fail2ban — brute force protection ────────────────────────
+  fail2ban:
+    image: crazymax/fail2ban:latest
+    container_name: ig360-fail2ban
+    restart: unless-stopped
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - ./config/fail2ban:/data
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    environment:
+      TZ: Europe/London
+      F2B_LOG_LEVEL: INFO
+      F2B_DB_PURGE_AGE: 1d
+
   traefik:
     image: traefik:latest
     container_name: ig360-traefik
@@ -17,6 +35,7 @@ services:
       - "--certificatesresolvers.le.acme.tlschallenge=true"
       - "--certificatesresolvers.le.acme.email=${ACME_EMAIL}"
       - "--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json"
+      - "--entrypoints.websecure.http.middlewares=secure-headers@file"
     ports:
       - "80:80"
       - "443:443"
@@ -31,11 +50,16 @@ services:
     container_name: ig360-postgres
     restart: unless-stopped
     environment:
+      POSTGRES_DB: netbox
+      POSTGRES_USER: netbox
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_MULTIPLE_DATABASES: netbox,keycloak
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - pg-data:/var/lib/postgresql/data
+      - ./config/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
     networks:
       - ig360
     healthcheck:
@@ -102,26 +126,48 @@ services:
       SECRET_KEY: ${NETBOX_SECRET_KEY}
     networks:
       - ig360
-
+# ── Keycloak SSO ─────────────────────────────────────────────
   keycloak:
-    image: quay.io/keycloak/keycloak:latest
+    image: quay.io/keycloak/keycloak:24.0.2
     container_name: ig360-keycloak
     restart: unless-stopped
-    command: start-dev
+    command: start --optimized
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+      KC_HOSTNAME: ${DOMAIN}
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY: edge
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+      KC_LOG_LEVEL: INFO
+      KC_CACHE: local
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN_USER}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
     depends_on:
       postgres:
         condition: service_healthy
-    environment:
-      KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://postgres/${POSTGRES_DB}
-      KC_DB_USERNAME: ${POSTGRES_USER}
-      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
-      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
-      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
-      KC_HOSTNAME: keycloak.${DOMAIN}
-      KC_PROXY: edge
     networks:
       - ig360
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health/ready || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.keycloak.rule=Host(`sso.${DOMAIN}`)"
+      - "traefik.http.routers.keycloak.tls.certresolver=le"
+      - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
+      - "traefik.http.middlewares.ratelimit.rateLimit.average=20"
+      - "traefik.http.middlewares.ratelimit.rateLimit.burst=10"
+      - "traefik.http.routers.keycloak.middlewares=ratelimit@docker"
+
 
 networks:
   ig360:
@@ -132,3 +178,6 @@ volumes:
   redis-data:
   netbox-media:
   traefik-certs:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./config/traefik/dynamic.yml:/etc/traefik/dynamic.yml
+      - traefik-certs:/letsencrypt

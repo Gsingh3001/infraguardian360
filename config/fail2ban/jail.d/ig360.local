@@ -1,0 +1,38 @@
+# ============================================================
+#  InfraGuardian360 — fail2ban Configuration
+#  Protects: SSH, Keycloak login, NetBox admin
+# ============================================================
+
+[DEFAULT]
+bantime  = 1h
+findtime = 10m
+maxretry = 5
+banaction = iptables-multiport
+
+# ── SSH protection ────────────────────────────────────────────
+[sshd]
+enabled  = true
+port     = ssh
+filter   = sshd
+logpath  = /var/log/auth.log
+maxretry = 3
+bantime  = 24h
+
+# ── Keycloak brute force protection ──────────────────────────
+[keycloak]
+enabled  = true
+port     = http,https
+filter   = keycloak
+logpath  = /var/lib/docker/containers/*/*.log
+maxretry = 5
+bantime  = 30m
+findtime = 5m
+
+# ── NetBox admin protection ───────────────────────────────────
+[netbox]
+enabled  = true
+port     = http,https
+filter   = netbox
+logpath  = /var/lib/docker/containers/*/*.log
+maxretry = 10
+bantime  = 15m

@@ -1,8 +1,20 @@
 ﻿param(
-    [string]$IG360Server = "your-ig360-server",
-    [string]$OpenSearchPort = "9200",
-    [string]$PrometheusPort = "9182"
+    [Parameter(Mandatory=$false)]
+    [string]$IG360Server = "localhost",
+
+    [Parameter(Mandatory=$false)]
+    [string]$OpenSearchPassword = "",
+
+    [Parameter(Mandatory=$false)]
+    [switch]$EnableHyperV
 )
+
+# ── Prompt for OpenSearch password if not provided ───────────
+if ([string]::IsNullOrEmpty($OpenSearchPassword)) {
+    $SecurePassword = Read-Host "Enter OpenSearch admin password (from /root/ig360-credentials.txt on server)" -AsSecureString
+    $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecurePassword)
+    $OpenSearchPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
+}
 
 function Write-Log  { Write-Host "[IG360]  $args" -ForegroundColor Cyan }
 function Write-Ok   { Write-Host "[  OK  ] $args" -ForegroundColor Green }
@@ -74,7 +86,7 @@ $ConfigLines = @(
     "    Port          $OpenSearchPort",
     "    Index         ig360-logs-windows",
     "    HTTP_User     admin",
-    "    HTTP_Passwd   admin",
+    "    HTTP_Passwd   $OpenSearchPassword",
     "    tls           Off",
     "    Suppress_Type_Name On"
 )

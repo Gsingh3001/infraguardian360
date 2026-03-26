@@ -151,6 +151,13 @@ configure_firewall() {
   netfilter-persistent save 2>/dev/null || true
 
   success "Firewall configured — ports 80 and 443 open"
+
+# ── Block OTel ports from external access ─────────────────
+  # Agents must use WireGuard tunnel or server-side proxy
+  ufw deny 4317/tcp comment "OTel gRPC - internal only"
+  ufw deny 4318/tcp comment "OTel HTTP - internal only"
+  success "OTel ports blocked from external access"
+
 }
 
 # ── CLONE REPO ───────────────────────────────────────────────
