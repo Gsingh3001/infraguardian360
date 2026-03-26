@@ -1,0 +1,90 @@
+# ============================================================
+#  InfraGuardian360 — HertzBeat Application Configuration
+#  Required: HertzBeat will not start without this file
+#  Storage: VictoriaMetrics for metrics, H2 for local state
+# ============================================================
+
+server:
+  port: 1157
+
+spring:
+  application:
+    name: hertzbeat
+  datasource:
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 123456
+    url: jdbc:h2:./data/hertzbeat;AUTO_SERVER=TRUE
+  jpa:
+    show-sql: false
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+  mail:
+    # Configure email alerts here — or leave blank to use HertzBeat UI alerts
+    host: smtp.example.com
+    port: 465
+    username: example@example.com
+    password: example_password
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
+
+# ── Warehouse storage backend ──────────────────────────────
+warehouse:
+  store:
+    # Use VictoriaMetrics as the metrics backend
+    jpa:
+      enabled: false
+    victoria-metrics:
+      enabled: true
+      url: http://victoriametrics:8428
+    td-engine:
+      enabled: false
+    iot-db:
+      enabled: false
+
+# ── Alert configuration ────────────────────────────────────
+alerter:
+  # Time in ms between alert evaluations
+  alert-eval-interval: 6000
+
+  # Inhibit repeat alerts for this many hours
+  alert-inhibit-until: 1
+
+  # Where to send alerts — set these via environment or HertzBeat UI
+  discord:
+    enable: false
+  slack:
+    enable: false
+    webhook-url: ${HERTZBEAT_SLACK_WEBHOOK:}
+  telegram:
+    enable: false
+    bot-token: ${HERTZBEAT_TELEGRAM_TOKEN:}
+    chat-id: ${HERTZBEAT_TELEGRAM_CHAT_ID:}
+  teams:
+    enable: false
+    webhook-url: ${HERTZBEAT_TEAMS_WEBHOOK:}
+
+# ── Logging ────────────────────────────────────────────────
+logging:
+  file:
+    name: /opt/hertzbeat/logs/hertzbeat.log
+    max-size: 50MB
+    max-history: 7
+  level:
+    root: INFO
+    com.usthe.hertzbeat: INFO
+    org.hibernate: WARN
+    org.springframework: WARN
+
+# ── Scheduler ──────────────────────────────────────────────
+scheduler:
+  # Number of collector threads
+  worker-num: 8
+  # Maximum pending collect tasks
+  max-pending-num: 10000

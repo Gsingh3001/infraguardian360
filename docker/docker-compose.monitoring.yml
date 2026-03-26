@@ -92,18 +92,16 @@ services:
       - "traefik.http.services.alertmanager.loadbalancer.server.port=9093"
 
   # ── OpenTelemetry Collector ──────────────────────────────────
-  otel-collector:
+otel-collector:
     image: otel/opentelemetry-collector-contrib:latest
-    container_name: ig360-otel
+    container_name: ig360-otel-collector
     restart: unless-stopped
-    command: ["--config=/etc/otelcol/config.yaml"]
     volumes:
       - ./config/otel/collector.yaml:/etc/otelcol/config.yaml
-    ports:
-      - "4317:4317"
-      - "4318:4318"
     networks:
       - ig360
+    # No ports: block — internal network only
+    # External OTel ingestion handled by signoz-otel-collector in apm stack
 
   # ── SNMP Exporter ────────────────────────────────────────────
   snmp-exporter:

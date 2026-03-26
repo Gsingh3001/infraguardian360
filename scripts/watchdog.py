@@ -32,7 +32,6 @@ NOTIFY_EMAIL = os.getenv("NOTIFY_EMAIL", "")
 
 # ── Services to monitor ───────────────────────────────────────
 SERVICES = {
-    # name: (container_name, critical, depends_on)
     "postgres":           ("ig360-postgres",             True,  []),
     "redis":              ("ig360-redis",                True,  []),
     "netbox":             ("ig360-netbox",               True,  ["postgres", "redis"]),
@@ -42,7 +41,7 @@ SERVICES = {
     "hertzbeat":          ("ig360-hertzbeat",            True,  []),
     "prometheus":         ("ig360-prometheus",           True,  []),
     "alertmanager":       ("ig360-alertmanager",         False, []),
-    "victoriametrics":    ("ig360-victoriametrics",      True,  []),
+    "victoriametrics":    ("ig360-victoria",             True,  []),
     "otel-collector":     ("ig360-otel-collector",       False, []),
     "netdisco":           ("ig360-netdisco",             False, ["postgres"]),
     "clickhouse":         ("ig360-clickhouse",           False, []),

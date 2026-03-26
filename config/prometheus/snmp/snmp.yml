@@ -1,0 +1,160 @@
+# ============================================================
+#  InfraGuardian360 — Prometheus SNMP Exporter Configuration
+#  Covers: IF-MIB (all devices), Cisco, HP/Aruba, Fortinet,
+#          Printer-MIB, Juniper, Arista
+#  Usage: snmp_exporter uses this file automatically on startup
+# ============================================================
+
+auths:
+  public_v2:
+    community: public
+    security_level: noAuthNoPriv
+    auth_protocol: MD5
+    priv_protocol: DES
+    version: 2
+
+  v3_auth_priv:
+    security_level: authPriv
+    auth_protocol: SHA
+    priv_protocol: AES
+    version: 3
+
+modules:
+
+  # ── Standard IF-MIB — works on ALL SNMP devices ──────────
+  if_mib:
+    auth: public_v2
+    walk:
+      - 1.3.6.1.2.1.1        # sysDescr, sysName, sysUpTime, sysContact, sysLocation
+      - 1.3.6.1.2.1.2.2      # ifTable — admin/oper status, speed
+      - 1.3.6.1.2.1.31.1.1   # ifXTable — 64-bit counters, interface names
+    lookups:
+      - source_indexes: [ifIndex]
+        lookup: 1.3.6.1.2.1.31.1.1.1.1
+        drop_source_indexes: false
+    overrides:
+      ifType:
+        type: EnumAsStateSet
+      ifAdminStatus:
+        type: EnumAsStateSet
+      ifOperStatus:
+        type: EnumAsStateSet
+
+  # ── Cisco Catalyst Switch ─────────────────────────────────
+  cisco_switch:
+    auth: public_v2
+    walk:
+      - 1.3.6.1.2.1.1
+      - 1.3.6.1.2.1.2.2
+      - 1.3.6.1.2.1.31.1.1
+      - 1.3.6.1.4.1.9.2.1.56  # cpu 5s
+      - 1.3.6.1.4.1.9.2.1.57  # cpu 1m
+      - 1.3.6.1.4.1.9.2.1.58  # cpu 5m
+      - 1.3.6.1.4.1.9.9.48.1.1.1  # memory pool
+      - 1.3.6.1.2.1.105.1.1.1      # PoE port table
+      - 1.3.6.1.4.1.9.9.13.1.3.1   # environment sensors
+    lookups:
+      - source_indexes: [ifIndex]
+        lookup: 1.3.6.1.2.1.31.1.1.1.1
+        drop_source_indexes: false
+
+  # ── HP / Aruba Switch ─────────────────────────────────────
+  hp_switch:
+    auth: public_v2
+    walk:
+      - 1.3.6.1.2.1.1
+      - 1.3.6.1.2.1.2.2
+      - 1.3.6.1.2.1.31.1.1
+      - 1.3.6.1.4.1.11.2.14.11.5.1.9.6.1  # HP CPU
+      - 1.3.6.1.4.1.11.2.14.11.5.1.9.1     # HP memory
+      - 1.3.6.1.2.1.105.1.1.1               # PoE
+    lookups:
+      - source_indexes: [ifIndex]
+        lookup: 1.3.6.1.2.1.31.1.1.1.1
+        drop_source_indexes: false
+
+  # ── Fortinet FortiGate ────────────────────────────────────
+  fortinet:
+    auth: public_v2
+    walk:
+      - 1.3.6.1.2.1.1
+      - 1.3.6.1.2.1.2.2
+      - 1.3.6.1.2.1.31.1.1
+      - 1.3.6.1.4.1.12356.101.4.1.3   # CPU usage
+      - 1.3.6.1.4.1.12356.101.4.1.4   # memory usage
+      - 1.3.6.1.4.1.12356.101.4.1.8   # active sessions
+      - 1.3.6.1.4.1.12356.101.12.2.2  # VPN tunnels
+    lookups:
+      - source_indexes: [ifIndex]
+        lookup: 1.3.6.1.2.1.31.1.1.1.1
+        drop_source_indexes: false
+
+  # ── Printer MIB — HP / Samsung / Ricoh / Xerox / Brother ─
+  printer_mib:
+    auth: public_v2
+    walk:
+      - 1.3.6.1.2.1.1
+      - 1.3.6.1.2.1.25.3.5.1    # hrPrinterStatus
+      - 1.3.6.1.2.1.43.10.2.1   # prtMarkerLifeCount (total pages)
+      - 1.3.6.1.2.1.43.11.1.1   # prtMarkerSupplies (toner/drum levels)
+      - 1.3.6.1.2.1.43.12.1.1   # prtMarkerColorant (CMYK colours)
+      - 1.3.6.1.2.1.43.8.2.1    # prtInputTable (paper trays)
+      - 1.3.6.1.2.1.43.18.1.1   # prtConsoleDisplayBuffer (errors)
+
+  # ── Juniper SRX ───────────────────────────────────────────
+  juniper_srx:
+    auth: public_v2
+    walk:
+      - 1.3.6.1.2.1.1
+      - 1.3.6.1.2.1.2.2
+      - 1.3.6.1.2.1.31.1.1
+      - 1.3.6.1.4.1.2636.3.1.13.1.8   # RE CPU
+      - 1.3.6.1.4.1.2636.3.1.13.1.11  # RE memory used
+      - 1.3.6.1.4.1.2636.3.1.13.1.7   # RE temperature
+      - 1.3.6.1.2.1.15.3              # BGP peers (bgpPeerTable)
+    lookups:
+      - source_indexes: [ifIndex]
+        lookup: 1.3.6.1.2.1.31.1.1.1.1
+        drop_source_indexes: false
+
+  # ── Arista EOS ────────────────────────────────────────────
+  arista:
+    auth: public_v2
+    walk:
+      - 1.3.6.1.2.1.1
+      - 1.3.6.1.2.1.2.2
+      - 1.3.6.1.2.1.31.1.1
+      - 1.3.6.1.4.1.30065.3.1.1       # EOS version/model
+      - 1.3.6.1.4.1.2021.11.9          # CPU 5sec
+      - 1.3.6.1.4.1.2021.4             # memory
+      - 1.3.6.1.4.1.30065.3.12.1.1    # environment sensors
+      - 1.3.6.1.4.1.30065.3.14.1.2    # MLAG state
+    lookups:
+      - source_indexes: [ifIndex]
+        lookup: 1.3.6.1.2.1.31.1.1.1.1
+        drop_source_indexes: false
+
+  # ── Ubiquiti UniFi AP ─────────────────────────────────────
+  ubiquiti_unifi:
+    auth: public_v2
+    walk:
+      - 1.3.6.1.2.1.1
+      - 1.3.6.1.4.1.41112.1.6.1  # AP info
+      - 1.3.6.1.4.1.41112.1.6.3  # radio table
+      - 1.3.6.1.4.1.41112.1.6.4  # client table
+    lookups: []
+
+  # ── Dell iDRAC ────────────────────────────────────────────
+  dell_idrac:
+    auth: public_v2
+    walk:
+      - 1.3.6.1.2.1.1
+      - 1.3.6.1.4.1.674.10892.5.1.3   # system info
+      - 1.3.6.1.4.1.674.10892.5.2.1.0 # overall health
+      - 1.3.6.1.4.1.674.10892.5.4.1100.30.1  # CPU table
+      - 1.3.6.1.4.1.674.10892.5.4.1100.50.1  # memory table
+      - 1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1  # disk table
+      - 1.3.6.1.4.1.674.10892.5.4.600.12.1   # PSU table
+      - 1.3.6.1.4.1.674.10892.5.4.700.20.1   # temperature sensors
+      - 1.3.6.1.4.1.674.10892.5.4.700.12.1   # fan sensors
+    lookups: []

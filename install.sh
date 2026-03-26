@@ -318,6 +318,19 @@ show_summary() {
   echo ""
 }
 
+
+# ── Substitute Alertmanager config tokens ─────────────────
+  log "Configuring Alertmanager..."
+  sed -i "s|IG360_ADMIN_EMAIL|${USER_EMAIL}|g" \
+    config/alertmanager/alertmanager.yml
+  sed -i "s|IG360_SMTP_USER|${USER_EMAIL}|g" \
+    config/alertmanager/alertmanager.yml
+  sed -i "s|IG360_SMTP_PASSWORD|${SMTP_PASSWORD:-changeme}|g" \
+    config/alertmanager/alertmanager.yml
+  sed -i "s|IG360_SLACK_WEBHOOK|${SLACK_WEBHOOK:-https://hooks.slack.com/placeholder}|g" \
+    config/alertmanager/alertmanager.yml
+  success "Alertmanager configured"
+
 # ── MAIN ─────────────────────────────────────────────────────
 main() {
   clear

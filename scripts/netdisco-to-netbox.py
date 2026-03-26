@@ -191,7 +191,7 @@ class NetdiscoClient:
             columns = [desc[0] for desc in cur.description]
             return [dict(zip(columns, row)) for row in cur.fetchall()]
 
-    def get_device_neighbours(self, ip: str) -> list:
+def get_device_neighbours(self, ip: str) -> list:
         """Get LLDP/CDP neighbours for a device."""
         with self.conn.cursor() as cur:
             cur.execute("""
@@ -199,10 +199,8 @@ class NetdiscoClient:
                     dn.port,
                     dn.remote_ip,
                     dn.remote_port,
-                    dn.remote_type,
-                    dn.remote_id,
-                    dn.remote_desc
-                FROM device_port_log dn
+                    dn.remote_type
+                FROM device_port_neighbor dn
                 WHERE dn.ip = %s
                   AND dn.remote_ip IS NOT NULL
             """, (ip,))
